@@ -1,0 +1,112 @@
+"""
+============================================================================
+ SPRITE TRADE STOP — OWNER CONFIG
+============================================================================
+Edit the values in this file to match your server. You can fill IDs in by
+hand, OR run the in-Discord /setup command (admin only) which auto-detects
+channels and roles by name and saves their IDs into the database — those saved
+IDs then override whatever is set here, so you don't have to hunt for IDs.
+
+How IDs are resolved at runtime (see settings.py):
+    database override (from /setup)  >  the value set here  >  unset (0)
+
+You can refer to channels/roles by NAME here (strings) and let /setup resolve
+them, or paste numeric IDs directly. Numeric IDs are the most reliable.
+----------------------------------------------------------------------------
+"""
+
+# Your server (guild) ID. Right-click the server icon -> Copy Server ID
+# (enable Developer Mode in Discord settings first).
+GUILD_ID = 0
+
+# ---------------------------------------------------------------------------
+# People with elevated permissions
+# ---------------------------------------------------------------------------
+# Owner ("Frosty") + admins, by user ID. These users can run admin commands
+# even without the Owner/Admin *roles* below. Add as many as you need.
+OWNER_IDS = [
+    0,  # <- Frosty's user ID
+]
+ADMIN_IDS = [
+    # 111111111111111111,
+]
+
+# Static roles that also grant admin permissions. The bot NEVER auto-strips
+# these. Matched by name (case-insensitive) if no ID is given.
+OWNER_ROLE_NAME = "Owner"
+ADMIN_ROLE_NAME = "Admin"
+
+# ---------------------------------------------------------------------------
+# Channels (by name; /setup resolves to IDs, or paste IDs into settings)
+# ---------------------------------------------------------------------------
+CHANNELS = {
+    "trade_portal": "trade-portal",     # where /trade embeds are posted
+    "vouch_trades": "vouch-trades",     # where vouches are announced
+    "modlog": "modlog",                 # scam reports / admin audit
+    "leaderboard": "leaderboard",       # daily leaderboard auto-post
+    "sprite_list": "sprite-list",       # auto-maintained holders list
+    "gold_zp_list": "gold-zp-list",     # auto-maintained Gold Zero Point list
+    "welcome": "welcome",               # welcome messages on join
+}
+
+# ---------------------------------------------------------------------------
+# Sprite roles (the server already creates these via Discord Onboarding)
+# ---------------------------------------------------------------------------
+# 7 collectible sprites, each with a base + "(Gold)" variant. The bot READS
+# these roles; it does not create them. Fire/Earth/Water are starters (no role).
+# Values are role NAMES; /setup resolves them to IDs. You may also hardcode IDs
+# in settings if names are ambiguous.
+SPRITE_ROLES = {
+    "Zero Point": {"base": "Zero Point", "gold": "Zero Point (Gold)"},
+    "Dream":      {"base": "Dream",      "gold": "Dream (Gold)"},
+    "Punk":       {"base": "Punk",       "gold": "Punk (Gold)"},
+    "King":       {"base": "King",       "gold": "King (Gold)"},
+    "Ghost":      {"base": "Ghost",      "gold": "Ghost (Gold)"},
+    "Demon":      {"base": "Demon",      "gold": "Demon (Gold)"},
+    "Duck":       {"base": "Duck",       "gold": "Duck (Gold)"},
+}
+
+# Starter sprites with no role (for reference / messages).
+STARTER_SPRITES = ["Fire", "Earth", "Water"]
+
+# ---------------------------------------------------------------------------
+# Trust / verified trader
+# ---------------------------------------------------------------------------
+VERIFIED_TRADER_ROLE_NAME = "verified-trader"
+# Number of (non-removed) vouches received to auto-assign verified-trader.
+VERIFIED_TRADER_THRESHOLD = 5
+
+# ---------------------------------------------------------------------------
+# Flair ladder (auto-assigned by progression). All thresholds tunable.
+# A member holds exactly ONE flair role at a time (the highest they qualify
+# for). Newbie is assigned on join. Thresholds are measured in VOUCHES RECEIVED.
+# ---------------------------------------------------------------------------
+FLAIR_TIERS = [
+    # (flair role name, min vouches received to reach it)
+    ("Newbie",          0),
+    ("Trader",          1),
+    ("Verified Trader", 5),
+    ("Veteran",         15),
+    ("Max Helper",      40),
+]
+
+# ---------------------------------------------------------------------------
+# XP (vouch-driven only — NO chat XP)
+# ---------------------------------------------------------------------------
+XP_PER_VOUCH = 10          # XP granted per vouch received
+
+# ---------------------------------------------------------------------------
+# Anti-scam
+# ---------------------------------------------------------------------------
+MIN_ACCOUNT_AGE_DAYS = 7   # minimum Discord account age to give/receive vouches
+
+# ---------------------------------------------------------------------------
+# Misc
+# ---------------------------------------------------------------------------
+DB_PATH = "sprite_trade_stop.db"
+COMMAND_PREFIX = "+"       # enables the  +rep @user  vouch alias
+LIST_REFRESH_MINUTES = 30  # how often auto-maintained lists + leaderboard refresh
+NO_VBUCKS_RULE = (
+    "💰 **Server rule:** Sprites are traded for sprites only — **never** sold "
+    "for V-Bucks or real money."
+)
