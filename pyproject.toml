@@ -1,0 +1,5 @@
+[tool.pytest.ini_options]
+# Ensure the repo root is importable so `import spritebot` works under the
+# `pytest` console script (not just `python -m pytest`).
+pythonpath = ["."]
+testpaths = ["tests"]
