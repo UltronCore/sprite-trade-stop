@@ -8,7 +8,7 @@ Commands:
   /editvouch <id> ...           — admin: edit a vouch's note/proof
   /removevouch <id>             — admin: remove a vouch (soft delete)
   /leaderboard                  — top traders by vouches
-A daily leaderboard auto-posts to the leaderboard channel (see tasks.py).
+A daily leaderboard auto-posts to the leaderboard channel (loop in the Admin cog).
 """
 
 import discord
@@ -35,10 +35,17 @@ class Vouch(commands.Cog):
             return reason
         ok, reason = helpers.eligible_to_vouch(target)
         if not ok:
-            return f"Target not eligible: {reason}"
+            return reason
+        limited, why = helpers.vouch_rate_limited(voucher.id)
+        if limited:
+            return why
         if db.already_vouched(voucher.id, target.id):
             return f"You've already vouched for {target.display_name}."
 
+        # Cap stored free-text so it can never blow Discord's 1024-char field
+        # limit when echoed into embeds later.
+        note = note[:500] if note else None
+        proof = proof[:500] if proof else None
         vouch_id = db.add_vouch(voucher.id, target.id, note=note, proof=proof)
         summary = await helpers.apply_progression(target)
 
@@ -74,12 +81,25 @@ class Vouch(commands.Cog):
                                    proof=proof, note=note)
         await interaction.response.send_message(msg, ephemeral=True)
 
-    # +rep @user  text alias
+    # +rep @user  text alias (note only — use /vouch to attach a proof link)
     @commands.command(name="rep")
+    @commands.guild_only()  # avoids ctx.guild being None in DMs
     async def rep_alias(self, ctx: commands.Context, user: discord.Member,
                         *, note: str = None):
         msg = await self._do_vouch(ctx.guild, ctx.author, user, note=note)
         await ctx.reply(msg)
+
+    @rep_alias.error
+    async def rep_alias_error(self, ctx: commands.Context, error):
+        # Reply instead of failing silently (there is no global error handler).
+        if isinstance(error, commands.MissingRequiredArgument):
+            await ctx.reply("Usage: `+rep @user [note]`")
+        elif isinstance(error, commands.MemberNotFound):
+            await ctx.reply("Couldn't find that member — mention them: `+rep @user`")
+        elif isinstance(error, commands.NoPrivateMessage):
+            await ctx.reply("Use `+rep` in the server, not in DMs.")
+        else:
+            raise error
 
     @app_commands.command(description="Show a trader's reputation profile.")
     async def profile(self, interaction: discord.Interaction,
@@ -112,8 +132,10 @@ class Vouch(commands.Cog):
                 vn = voucher.display_name if voucher else f"User {v['voucher_id']}"
                 note = f" — {v['note']}" if v["note"] else ""
                 lines.append(f"`#{v['id']}` from **{vn}**{note}")
-            embed.add_field(name="Recent vouches", value="\n".join(lines),
-                            inline=False)
+            value = "\n".join(lines)
+            if len(value) > 1024:                 # respect the field-value cap
+                value = value[:1021] + "…"
+            embed.add_field(name="Recent vouches", value=value, inline=False)
         await interaction.response.send_message(embed=embed)
 
     @app_commands.command(description="Your flair, XP, and progress to the next tier.")

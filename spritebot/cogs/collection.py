@@ -6,8 +6,8 @@ Onboarding) instead of tracking collection in the DB.
   /whoneeds <sprite>        — members lacking it (trade targets)
   /match                    — pairs where one HAS what another NEEDS
 
-Also keeps #sprite-list and #gold-zp-list auto-updated (see tasks.py for the
-timed refresh; this cog exposes the rebuild + a slash to force it).
+Also keeps #sprite-list and #gold-zp-list auto-updated (the timed refresh loop
+lives in the Admin cog; this cog exposes the rebuild + a slash to force it).
 """
 
 import discord
@@ -25,39 +25,52 @@ class Collection(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
+    @staticmethod
+    async def _ensure_chunked(guild: discord.Guild):
+        """Guarantee the full member list is cached before reading role.members
+        / guild.members, otherwise results would be silently incomplete."""
+        if not guild.chunked:
+            try:
+                await guild.chunk()
+            except Exception:
+                pass
+
     @app_commands.command(description="List members who HAVE a sprite.")
     @app_commands.describe(sprite="Which sprite", gold="Gold variant?")
     @app_commands.choices(sprite=_sprite_choices())
     async def whohas(self, interaction: discord.Interaction,
                      sprite: str, gold: bool = False):
+        await interaction.response.defer()
+        await self._ensure_chunked(interaction.guild)
         role = settings.sprite_role(interaction.guild, sprite, gold=gold)
+        label = f"{sprite}{' (Gold)' if gold else ''}"
         if not role:
-            await interaction.response.send_message(
-                f"Role for {sprite}{' (Gold)' if gold else ''} not found. "
-                f"Run `/setup` or check config.", ephemeral=True)
+            await interaction.followup.send(
+                f"Role for {label} not found. Run `/setup` or check config.",
+                ephemeral=True)
             return
         members = role.members
-        label = f"{sprite}{' (Gold)' if gold else ''}"
         if not members:
-            await interaction.response.send_message(
-                f"Nobody has **{label}** yet.")
+            await interaction.followup.send(f"Nobody has **{label}** yet.")
             return
         names = ", ".join(m.display_name for m in members[:50])
         more = f" …and {len(members) - 50} more" if len(members) > 50 else ""
         embed = discord.Embed(
             title=f"🟢 Holders of {label} ({len(members)})",
             description=names + more, color=discord.Color.green())
-        await interaction.response.send_message(embed=embed)
+        await interaction.followup.send(embed=embed)
 
     @app_commands.command(description="List members who NEED a sprite (don't have it).")
     @app_commands.choices(sprite=_sprite_choices())
     async def whoneeds(self, interaction: discord.Interaction, sprite: str):
+        await interaction.response.defer()
+        await self._ensure_chunked(interaction.guild)
         role = settings.sprite_role(interaction.guild, sprite, gold=False)
         if not role:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 f"Role for {sprite} not found.", ephemeral=True)
             return
-        haves = set(m.id for m in role.members)
+        haves = {m.id for m in role.members}
         needs = [m for m in interaction.guild.members
                  if not m.bot and m.id not in haves]
         names = ", ".join(m.display_name for m in needs[:50])
@@ -68,14 +81,16 @@ class Collection(commands.Cog):
             color=discord.Color.red())
         if more:
             embed.set_footer(text=more)
-        await interaction.response.send_message(embed=embed)
+        await interaction.followup.send(embed=embed)
 
     @app_commands.command(description="Find HAVE↔NEED matches for a sprite.")
     @app_commands.choices(sprite=_sprite_choices())
     async def match(self, interaction: discord.Interaction, sprite: str):
+        await interaction.response.defer()
+        await self._ensure_chunked(interaction.guild)
         role = settings.sprite_role(interaction.guild, sprite, gold=False)
         if not role:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 f"Role for {sprite} not found.", ephemeral=True)
             return
         haves = [m for m in role.members if not m.bot]
@@ -83,7 +98,7 @@ class Collection(commands.Cog):
         needs = [m for m in interaction.guild.members
                  if not m.bot and m.id not in have_ids]
         if not haves or not needs:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 f"No matches possible for {sprite} right now "
                 f"({len(haves)} have, {len(needs)} need).")
             return
@@ -96,7 +111,7 @@ class Collection(commands.Cog):
             description="\n".join(lines),
             color=discord.Color.blurple())
         embed.set_footer(text=f"{len(haves)} holders · {len(needs)} seekers")
-        await interaction.response.send_message(embed=embed)
+        await interaction.followup.send(embed=embed)
 
     @app_commands.command(description="(Admin) Rebuild the auto sprite lists now.")
     async def refreshlists(self, interaction: discord.Interaction):

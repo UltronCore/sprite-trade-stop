@@ -1,7 +1,7 @@
 """
 Two-party trade flow with anti-scam confirmation.
 
-/trade @user give_you give_them
+/trade @user you_give they_give
   -> posts an embed in #trade-portal with Confirm buttons for BOTH parties.
   -> the trade only counts as complete once BOTH confirm.
   -> on completion, both are prompted to /vouch each other.
@@ -14,7 +14,7 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
-from .. import config, db, settings
+from .. import config, db, helpers, settings
 
 
 class TradeConfirmView(discord.ui.View):
@@ -22,20 +22,26 @@ class TradeConfirmView(discord.ui.View):
         super().__init__(timeout=None)
 
     async def _finish_if_ready(self, interaction, trade):
-        if trade["a_confirm"] and trade["b_confirm"]:
-            db.set_trade_status(trade["id"], "complete")
-            a = interaction.guild.get_member(trade["party_a"])
-            b = interaction.guild.get_member(trade["party_b"])
-            embed = _trade_embed(interaction.guild, db.get_trade(trade["id"]))
-            for c in self.children:
-                c.disabled = True
-            await interaction.message.edit(embed=embed, view=self)
-            am = a.mention if a else "Party A"
-            bm = b.mention if b else "Party B"
-            await interaction.channel.send(
-                f"✅ Trade `#{trade['id']}` complete! {am} and {bm}, please "
-                f"`/vouch` each other to build trust. {config.NO_VBUCKS_RULE}"
-            )
+        # Atomic pending->complete: returns True for exactly one caller, so the
+        # completion message can't post twice even if both confirms race.
+        if not db.complete_if_both_confirmed(trade["id"]):
+            return
+        a = interaction.guild.get_member(trade["party_a"])
+        b = interaction.guild.get_member(trade["party_b"])
+        embed = _trade_embed(interaction.guild, db.get_trade(trade["id"]))
+        for c in self.children:
+            c.disabled = True
+        await interaction.message.edit(embed=embed, view=self)
+        am = a.mention if a else "Party A"
+        bm = b.mention if b else "Party B"
+        # Explicitly allow pinging just the two traders here (the bot's global
+        # default suppresses all mentions).
+        ping = [m for m in (a, b) if m]
+        await interaction.channel.send(
+            f"✅ Trade `#{trade['id']}` complete! {am} and {bm}, please "
+            f"`/vouch` each other to build trust. {config.NO_VBUCKS_RULE}",
+            allowed_mentions=discord.AllowedMentions(users=ping),
+        )
 
     @discord.ui.button(label="Confirm", style=discord.ButtonStyle.success,
                        custom_id="trade_confirm")
@@ -86,10 +92,13 @@ def _trade_embed(guild, trade) -> discord.Embed:
               "complete": "✅ Complete",
               "cancelled": "❌ Cancelled"}[trade["status"]]
     e = discord.Embed(title=f"🔁 Trade #{trade['id']}", color=discord.Color.orange())
+    # Truncate to stay well under the 1024-char embed field-value limit.
+    give_a = (trade["give_a"] or "—")[:1000]
+    give_b = (trade["give_b"] or "—")[:1000]
     e.add_field(name=f"{a.display_name if a else 'Party A'} gives",
-                value=trade["give_a"] or "—", inline=True)
+                value=give_a, inline=True)
     e.add_field(name=f"{b.display_name if b else 'Party B'} gives",
-                value=trade["give_b"] or "—", inline=True)
+                value=give_b, inline=True)
     e.add_field(name="Status", value=status, inline=False)
     e.add_field(name="Confirmed",
                 value=f"{'✅' if trade['a_confirm'] else '⬜'} "
@@ -115,13 +124,16 @@ class Trades(commands.Cog):
             await interaction.response.send_message(
                 "Pick another (human) trader.", ephemeral=True)
             return
-        if db.is_blacklisted(user.id) or db.is_blacklisted(interaction.user.id):
-            await interaction.response.send_message(
-                "One of you is blacklisted from trading.", ephemeral=True)
-            return
+        # Both parties must pass blacklist + minimum-account-age (same gate as
+        # vouching) so fresh alts can't open trades to farm completed-trade counts.
+        for m in (interaction.user, user):
+            ok, reason = helpers.eligible_to_vouch(m)
+            if not ok:
+                await interaction.response.send_message(reason, ephemeral=True)
+                return
 
         trade_id = db.create_trade(interaction.user.id, user.id,
-                                   you_give, they_give)
+                                   you_give[:1000], they_give[:1000])
         portal = settings.get_channel(interaction.guild, "trade_portal") \
             or interaction.channel
         embed = _trade_embed(interaction.guild, db.get_trade(trade_id))

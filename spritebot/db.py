@@ -176,13 +176,24 @@ def already_vouched(voucher_id: int, target_id: int) -> bool:
 
 
 def leaderboard(limit: int = 10):
-    """Top members by active vouches received."""
+    """Top members by active vouches received (blacklisted users excluded)."""
     c = connect()
     return c.execute(
-        "SELECT target_id, COUNT(*) n FROM vouches WHERE removed=0 "
+        "SELECT target_id, COUNT(*) n FROM vouches "
+        "WHERE removed=0 AND target_id NOT IN (SELECT user_id FROM blacklist) "
         "GROUP BY target_id ORDER BY n DESC, target_id ASC LIMIT ?",
         (limit,),
     ).fetchall()
+
+
+def recent_vouch_count(voucher_id: int, window_seconds: int) -> int:
+    """How many vouches this user has GIVEN within the last window (rate limit)."""
+    c = connect()
+    row = c.execute(
+        "SELECT COUNT(*) n FROM vouches WHERE voucher_id=? AND created_at >= ?",
+        (voucher_id, now() - window_seconds),
+    ).fetchone()
+    return row["n"]
 
 
 # ---- trades ---------------------------------------------------------------
@@ -220,6 +231,22 @@ def confirm_trade(trade_id: int, side: str) -> None:
     c = connect()
     c.execute(f"UPDATE trades SET {col}=1 WHERE id=?", (trade_id,))
     c.commit()
+
+
+def complete_if_both_confirmed(trade_id: int) -> bool:
+    """Atomically flip pending->complete ONLY if both sides confirmed.
+
+    Returns True for exactly the one caller that performed the transition, so
+    the completion message can never post twice (fixes the two-confirm race).
+    """
+    c = connect()
+    cur = c.execute(
+        "UPDATE trades SET status='complete' "
+        "WHERE id=? AND status='pending' AND a_confirm=1 AND b_confirm=1",
+        (trade_id,),
+    )
+    c.commit()
+    return cur.rowcount == 1
 
 
 def set_trade_status(trade_id: int, status: str) -> None:
@@ -281,3 +308,15 @@ def add_scam_report(reporter_id, target_id, proof) -> int:
     )
     c.commit()
     return cur.lastrowid
+
+
+def seconds_since_last_report(reporter_id: int):
+    """Seconds since this user's last scam report, or None if they've none."""
+    c = connect()
+    row = c.execute(
+        "SELECT MAX(at) last FROM scam_reports WHERE reporter_id=?",
+        (reporter_id,),
+    ).fetchone()
+    if not row or row["last"] is None:
+        return None
+    return now() - row["last"]

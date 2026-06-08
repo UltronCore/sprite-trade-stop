@@ -35,7 +35,8 @@ class Insights(commands.Cog):
         sprite_mentions = Counter()
         want_mentions = Counter()
         channel_activity = Counter()
-        author_activity = Counter()
+        author_activity = Counter()   # keyed by author id (avoids name collisions)
+        author_names = {}
         open_wants = 0
 
         limit = max(20, min(messages_per_channel, 1000))
@@ -48,7 +49,8 @@ class Insights(commands.Cog):
                     if msg.author.bot:
                         continue
                     channel_activity[channel.name] += 1
-                    author_activity[msg.author.display_name] += 1
+                    author_activity[msg.author.id] += 1
+                    author_names[msg.author.id] = msg.author.display_name
                     content = msg.content
                     is_want = bool(_WANT_RE.search(content))
                     if is_want:
@@ -61,9 +63,11 @@ class Insights(commands.Cog):
             except discord.Forbidden:
                 continue
 
-        def fmt(counter, n=5):
+        def fmt(counter, n=5, names=None):
             top = counter.most_common(n)
-            return "\n".join(f"`{c}` {name}" for name, c in top) or "—"
+            return "\n".join(
+                f"`{c}` {names.get(key, key) if names else key}"
+                for key, c in top) or "—"
 
         embed = discord.Embed(
             title="📊 Server Insights (counts only — no AI)",
@@ -75,7 +79,8 @@ class Insights(commands.Cog):
                         value=fmt(want_mentions), inline=False)
         embed.add_field(name="Busiest channels", value=fmt(channel_activity),
                         inline=False)
-        embed.add_field(name="Most active members", value=fmt(author_activity),
+        embed.add_field(name="Most active members",
+                        value=fmt(author_activity, names=author_names),
                         inline=False)
         embed.add_field(name="Open want-posts (approx)", value=str(open_wants))
         # Trade/vouch totals straight from the DB.

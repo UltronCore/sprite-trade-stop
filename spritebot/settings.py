@@ -71,11 +71,26 @@ def sprite_role(guild: discord.Guild, sprite: str, gold: bool = False):
 
 # ---- permissions ----------------------------------------------------------
 def is_admin(member: discord.Member) -> bool:
-    """True for configured owners/admins, the Owner/Admin roles, or guild perms."""
+    """True for configured owners/admins, the Owner/Admin roles, or guild perms.
+
+    Prefers role IDs resolved by /setup (role:owner / role:admin) over matching
+    by name, since a role *name* like "Admin" could otherwise be spoofed by a
+    self-assignable role. Falls back to name matching only if no ID is saved.
+    """
     if member.id in config.OWNER_IDS or member.id in config.ADMIN_IDS:
         return True
     if member.guild_permissions.administrator or member.guild_permissions.manage_guild:
         return True
-    names = {r.name.lower() for r in member.roles}
-    return (config.OWNER_ROLE_NAME.lower() in names
-            or config.ADMIN_ROLE_NAME.lower() in names)
+    member_role_ids = {r.id for r in member.roles}
+    owner_id = _role_override("owner")
+    admin_id = _role_override("admin")
+    if owner_id and owner_id in member_role_ids:
+        return True
+    if admin_id and admin_id in member_role_ids:
+        return True
+    # Fallback to name match only when /setup hasn't resolved the role IDs yet.
+    if owner_id is None and admin_id is None:
+        names = {r.name.lower() for r in member.roles}
+        return (config.OWNER_ROLE_NAME.lower() in names
+                or config.ADMIN_ROLE_NAME.lower() in names)
+    return False

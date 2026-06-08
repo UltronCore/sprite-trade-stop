@@ -7,7 +7,7 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
-from .. import db, settings
+from .. import config, db, helpers, settings
 
 
 class Scam(commands.Cog):
@@ -19,7 +19,23 @@ class Scam(commands.Cog):
                            proof="Link/description of what happened")
     async def reportscammer(self, interaction: discord.Interaction,
                             user: discord.Member, proof: str):
-        db.add_scam_report(interaction.user.id, user.id, proof)
+        # Guards: no self-reports, blacklisted users can't report, and a simple
+        # cooldown so the modlog can't be report-bombed.
+        if user.id == interaction.user.id:
+            await interaction.response.send_message(
+                "You can't report yourself.", ephemeral=True)
+            return
+        if db.is_blacklisted(interaction.user.id):
+            await interaction.response.send_message(
+                "Blacklisted users can't file reports.", ephemeral=True)
+            return
+        since = db.seconds_since_last_report(interaction.user.id)
+        if since is not None and since < config.SCAM_REPORT_COOLDOWN_SECONDS:
+            wait = config.SCAM_REPORT_COOLDOWN_SECONDS - since
+            await interaction.response.send_message(
+                f"Please wait {wait}s before reporting again.", ephemeral=True)
+            return
+        db.add_scam_report(interaction.user.id, user.id, proof[:1000])
         modlog = settings.get_channel(interaction.guild, "modlog")
         if modlog:
             embed = discord.Embed(
@@ -41,14 +57,17 @@ class Scam(commands.Cog):
         if not settings.is_admin(interaction.user):
             await interaction.response.send_message("Admins only.", ephemeral=True)
             return
-        db.add_blacklist(user.id, reason)
+        db.add_blacklist(user.id, reason[:300])
+        # Strip their trust roles so a blacklisted scammer can't keep flair /
+        # verified-trader badges.
+        await helpers.strip_progression_roles(user)
         modlog = settings.get_channel(interaction.guild, "modlog")
         if modlog:
             await modlog.send(
                 f"⛔ {user.mention} blacklisted by {interaction.user.mention} "
-                f"— {reason}")
+                f"— {reason[:300]}")
         await interaction.response.send_message(
-            f"{user.mention} blacklisted.", ephemeral=True)
+            f"{user.mention} blacklisted and trust roles removed.", ephemeral=True)
 
     @app_commands.command(description="(Admin) Remove a user from the blacklist.")
     async def unblacklist(self, interaction: discord.Interaction,

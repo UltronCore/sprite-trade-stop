@@ -45,6 +45,15 @@ class Admin(commands.Cog):
             else:
                 missing.append(f"channel `{key}` (looking for “{name}”)")
 
+        # Owner / Admin permission roles (resolved to IDs to prevent name spoofing).
+        for key, role_name in (("owner", config.OWNER_ROLE_NAME),
+                               ("admin", config.ADMIN_ROLE_NAME)):
+            r = discord.utils.get(guild.roles, name=role_name)
+            if r:
+                db.set_setting(f"role:{key}", r.id)
+                found.append(f"@{r.name} → {key}")
+            # Not flagged as missing — these roles are optional.
+
         # Verified-trader role.
         vt = discord.utils.get(guild.roles, name=config.VERIFIED_TRADER_ROLE_NAME)
         if vt:
@@ -71,12 +80,25 @@ class Admin(commands.Cog):
                 else:
                     missing.append(f"sprite role `{spec[variant]}`")
 
+        # Keep each field under Discord's 1024-char limit while showing as much
+        # as fits (there can be ~30 found entries: 7 channels + perms + flairs +
+        # 14 sprite roles).
+        def _clip(lines):
+            out, total = [], 0
+            for ln in lines:
+                if total + len(ln) + 1 > 1000:
+                    out.append(f"…and {len(lines) - len(out)} more")
+                    break
+                out.append(ln)
+                total += len(ln) + 1
+            return "\n".join(out) or "—"
+
         embed = discord.Embed(title="🔧 Setup results", color=discord.Color.green())
         embed.add_field(name=f"✅ Found ({len(found)})",
-                        value="\n".join(found[:25]) or "—", inline=False)
+                        value=_clip(found), inline=False)
         if missing:
             embed.add_field(name=f"⚠️ Missing ({len(missing)})",
-                            value="\n".join(missing[:25]), inline=False)
+                            value=_clip(missing), inline=False)
             embed.set_footer(
                 text="Create the missing channels/roles (matching the names in "
                      "config.py) and run /setup again.")

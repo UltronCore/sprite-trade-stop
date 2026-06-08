@@ -39,8 +39,15 @@ COGS = [
 
 class SpriteTradeBot(commands.Bot):
     def __init__(self):
-        super().__init__(command_prefix=config.COMMAND_PREFIX, intents=intents,
-                         help_command=None)
+        super().__init__(
+            command_prefix=config.COMMAND_PREFIX,
+            intents=intents,
+            help_command=None,
+            # Security: never let user-supplied text (vouch notes, trade items,
+            # report reasons) trigger @everyone/@here/role pings. Commands that
+            # intentionally ping pass their own allowed_mentions.
+            allowed_mentions=discord.AllowedMentions.none(),
+        )
 
     async def setup_hook(self):
         db.setup()

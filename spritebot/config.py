@@ -99,13 +99,16 @@ XP_PER_VOUCH = 10          # XP granted per vouch received
 # Anti-scam
 # ---------------------------------------------------------------------------
 MIN_ACCOUNT_AGE_DAYS = 7   # minimum Discord account age to give/receive vouches
+MAX_VOUCHES_PER_DAY = 10   # max vouches one member can GIVE per 24h (anti-farming)
+SCAM_REPORT_COOLDOWN_SECONDS = 60  # min seconds between a user's scam reports
 
 # ---------------------------------------------------------------------------
 # Misc
 # ---------------------------------------------------------------------------
 DB_PATH = "sprite_trade_stop.db"
 COMMAND_PREFIX = "+"       # enables the  +rep @user  vouch alias
-LIST_REFRESH_MINUTES = 30  # how often auto-maintained lists + leaderboard refresh
+LIST_REFRESH_MINUTES = 30  # how often the auto-maintained sprite lists refresh
+                           # (the daily leaderboard is a separate 24h loop)
 NO_VBUCKS_RULE = (
     "💰 **Server rule:** Sprites are traded for sprites only — **never** sold "
     "for V-Bucks or real money."

@@ -67,12 +67,44 @@ async def apply_progression(member: discord.Member) -> dict:
 
 
 def eligible_to_vouch(member: discord.Member) -> tuple[bool, str]:
-    """Check blacklist + minimum account age. Returns (ok, reason_if_not)."""
+    """Check blacklist + minimum account age. Returns (ok, reason_if_not).
+
+    Used to gate BOTH the voucher and the target, and trade participants.
+    """
     if db.is_blacklisted(member.id):
-        return False, "This user is blacklisted from the trade system."
+        return False, f"{member.display_name} is blacklisted from the trade system."
     age_days = (discord.utils.utcnow() - member.created_at).days
     if age_days < config.MIN_ACCOUNT_AGE_DAYS:
         return (False,
-                f"Account too new ({age_days}d). Minimum is "
-                f"{config.MIN_ACCOUNT_AGE_DAYS} days to use vouches.")
+                f"{member.display_name}'s account is too new ({age_days}d old); "
+                f"it must be at least {config.MIN_ACCOUNT_AGE_DAYS} days old to "
+                f"use the trade/vouch system.")
     return True, ""
+
+
+def vouch_rate_limited(voucher_id: int) -> tuple[bool, str]:
+    """Anti-farming: cap how many vouches one member can GIVE per 24h."""
+    given = db.recent_vouch_count(voucher_id, 24 * 3600)
+    if given >= config.MAX_VOUCHES_PER_DAY:
+        return (True,
+                f"You've hit the daily vouch limit "
+                f"({config.MAX_VOUCHES_PER_DAY}/day). Try again later.")
+    return False, ""
+
+
+async def strip_progression_roles(member: discord.Member) -> None:
+    """Remove flair + verified-trader roles (used when blacklisting a user)."""
+    from . import progression
+    to_remove = []
+    for name in progression.all_flair_names():
+        role = settings.flair_role(member.guild, name)
+        if role and role in member.roles:
+            to_remove.append(role)
+    vt = settings.verified_trader_role(member.guild)
+    if vt and vt in member.roles:
+        to_remove.append(vt)
+    if to_remove:
+        try:
+            await member.remove_roles(*to_remove, reason="Blacklisted")
+        except discord.Forbidden:
+            pass
