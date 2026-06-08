@@ -1,0 +1,7 @@
+# Sprite Trade Stop — runtime deps (minimal, free to host)
+discord.py>=2.4,<3.0
+python-dotenv>=1.0
+
+# Dev/test only (installed by CI):
+#   pytest
+#   ruff

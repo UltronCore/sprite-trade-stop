@@ -1,0 +1,15 @@
+# Secrets
+.env
+
+# Database (and WAL sidecars)
+*.db
+*.db-wal
+*.db-shm
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
