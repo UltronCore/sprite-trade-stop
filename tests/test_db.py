@@ -1,24 +1,19 @@
 """DB-layer tests on a throwaway database. Confirms no crash on empty DB and
 that vouch/trade/blacklist logic behaves."""
 
-import os
-import tempfile
-
 import pytest
 
 from spritebot import config, db
 
 
 @pytest.fixture(autouse=True)
-def fresh_db(monkeypatch):
-    path = tempfile.mktemp(suffix=".db")
+def fresh_db(monkeypatch, tmp_path):
+    path = str(tmp_path / "test.db")
     monkeypatch.setattr(config, "DB_PATH", path)
     db._conn = None  # force a new connection at the temp path
     db.setup()
     yield
-    db._conn = None
-    if os.path.exists(path):
-        os.remove(path)
+    db._conn = None  # tmp_path (incl. WAL sidecars) is auto-cleaned by pytest
 
 
 def test_empty_db_queries_dont_crash():
@@ -58,6 +53,44 @@ def test_trade_two_party_confirm():
     db.set_trade_status(tid, "complete")
     assert db.completed_trade_count(1) == 1
     assert db.completed_trade_count(2) == 1
+
+
+def test_complete_if_both_confirmed_is_exactly_once():
+    tid = db.create_trade(1, 2, "Ghost", "Duck")
+    # Not ready until both confirm.
+    assert db.complete_if_both_confirmed(tid) is False
+    db.confirm_trade(tid, "a")
+    assert db.complete_if_both_confirmed(tid) is False
+    db.confirm_trade(tid, "b")
+    # First caller wins, second (the "race") gets False — no double completion.
+    assert db.complete_if_both_confirmed(tid) is True
+    assert db.complete_if_both_confirmed(tid) is False
+    assert db.get_trade(tid)["status"] == "complete"
+    assert db.completed_trade_count(1) == 1
+
+
+def test_recent_vouch_count_rate_limit_window():
+    db.add_vouch(1, 2)
+    db.add_vouch(1, 3)
+    assert db.recent_vouch_count(1, 24 * 3600) == 2
+    assert db.recent_vouch_count(99, 24 * 3600) == 0
+
+
+def test_leaderboard_excludes_blacklisted():
+    db.add_vouch(1, 100)
+    db.add_vouch(2, 100)
+    db.add_vouch(1, 200)
+    db.add_blacklist(100, "scammer")
+    lb = db.leaderboard()
+    ids = [r["target_id"] for r in lb]
+    assert 100 not in ids and 200 in ids
+
+
+def test_scam_report_cooldown_query():
+    assert db.seconds_since_last_report(7) is None
+    db.add_scam_report(7, 8, "proof")
+    assert db.seconds_since_last_report(7) is not None
+    assert db.seconds_since_last_report(7) < 5
 
 
 def test_blacklist():
