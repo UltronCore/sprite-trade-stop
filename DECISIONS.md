@@ -26,8 +26,12 @@ Every assumption made during the autonomous build, so nothing is a mystery later
   This satisfies both "owner-editable config block" and "/setup auto-detects IDs."
 - **Default thresholds chosen** (tunable): verified-trader at **5** vouches;
   flair ladder Newbie 0 / Trader 1 / Verified Trader 5 / Veteran 15 / Max Helper
-  40; **XP_PER_VOUCH = 10**; **MIN_ACCOUNT_AGE_DAYS = 7**. These are guesses for
-  a ~175-member server — the owner should tune them.
+  40; **XP_PER_VOUCH = 10**; **MIN_ACCOUNT_AGE_DAYS = 7**;
+  **MAX_VOUCHES_PER_DAY = 10** (anti-farming);
+  **SCAM_REPORT_COOLDOWN_SECONDS = 60**. These are guesses for a ~175-member
+  server — the owner should tune them. The daily vouch cap + account-age gates
+  are deliberately conservative anti-sybil measures, not perfect ones (account
+  age is farmable; see ISSUES.md for the server-tenure follow-up).
 - **Default channel names** assumed: `trade-portal`, `vouch-trades`, `modlog`,
   `leaderboard`, `sprite-list`, `gold-zp-list`, `welcome`. Owner can rename in
   config and re-run `/setup`.
@@ -50,8 +54,8 @@ Every assumption made during the autonomous build, so nothing is a mystery later
 
 ## Insights
 - **AI-free by counting only.** "Most-requested" uses a simple keyword regex
-  (`want|wtb|lf|looking for|need`) intersected with sprite-name matches. It's a
-  heuristic, clearly labeled as approximate. Requires Message Content Intent.
+  (`want|wtb|lf|looking for|need|needing`) intersected with sprite-name matches.
+  It's a heuristic, clearly labeled as approximate. Requires Message Content Intent.
 
 ## Hosting doc
 - Free tiers and VPS pricing **verified via web search on 2026-06-08** (Oracle

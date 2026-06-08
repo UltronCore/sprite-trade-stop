@@ -57,9 +57,11 @@ run `/setup`. When adding a new configurable channel/role, add it to `config.py`
    ```python
    "Storm": {"base": "Storm", "gold": "Storm (Gold)"},
    ```
-3. Run `/setup` so the bot resolves the new role IDs. Done — `/whohas Storm`,
-   lists, and `/insights` pick it up automatically (the slash choices are
-   generated from `SPRITE_ROLES`).
+3. **Restart the bot**, then run `/setup`. The restart matters: the slash-command
+   choices for `/whohas` / `/whoneeds` / `/match` are generated from
+   `SPRITE_ROLES` **at import time** (`@app_commands.choices(...)`), so a new
+   sprite only appears in the pickers after the process restarts and re-syncs.
+   `/setup` then resolves the new role IDs. Lists and `/insights` pick it up too.
 
 ### Add or retune a flair tier
 Edit `config.FLAIR_TIERS` (name, min-vouches). Create the matching Discord role,

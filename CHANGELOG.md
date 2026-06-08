@@ -3,6 +3,40 @@
 All notable changes to Sprite Trade Stop. Format: date — what — why.
 This project uses [Semantic Versioning](https://semver.org/).
 
+## [1.0.1] — 2026-06-08
+Hardening pass from a full QA review (correctness + security + docs). No breaking
+changes to commands or config defaults; adds two tunable knobs.
+
+### Fixed
+- **Trade confirm race:** two simultaneous confirms could post the completion
+  message twice / double-count. Now an atomic `complete_if_both_confirmed`
+  guarantees exactly-once completion. *Why:* data integrity.
+- **`+rep` in DMs** raised `AttributeError` (no guild). Added `@commands.guild_only()`
+  and an error handler so misuse replies instead of failing silently.
+- **Embed field overflow:** long `/trade` items or vouch notes could exceed
+  Discord's 1024-char field limit and bounce the send. All user text is now capped.
+- **`/whohas` `/whoneeds` `/match`** now `defer()` and `chunk()` the guild so
+  results are complete and never hit the 3s timeout.
+
+### Security
+- **Mention injection neutralized:** bot-wide `allowed_mentions=AllowedMentions.none()`;
+  the trade-complete message pings only the two traders explicitly.
+- **Anti-farming:** `MAX_VOUCHES_PER_DAY` cap on vouches given; `/trade` now
+  enforces the same blacklist + minimum-account-age gate as vouching.
+- **Blacklist teeth:** blacklisting strips a user's flair/verified roles and
+  removes them from the leaderboard.
+- **`reportscammer` guards:** no self-reports, blacklisted users blocked, and a
+  per-user cooldown (`SCAM_REPORT_COOLDOWN_SECONDS`) against report-bombing.
+- **Admin checks** prefer `/setup`-resolved role IDs over spoofable role names.
+
+### Changed
+- CI now runs a Python **3.10 / 3.11 / 3.12** matrix (the README "3.10+" claim
+  is now actually tested).
+- Doc fixes: `+rep` takes note-only (not proof); documented `/insights`
+  `messages_per_channel`; noted that adding a sprite needs a bot restart;
+  corrected stale `tasks.py` docstring references and the `LIST_REFRESH_MINUTES`
+  comment.
+
 ## [1.0.0] — 2026-06-08
 Initial release. Built end-to-end and verified (lint + tests + cog-load smoke test).
 

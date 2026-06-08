@@ -19,7 +19,7 @@ server's existing Discord Onboarding roles instead of duplicating them.
 ## ✨ Features
 
 **Vouch + reputation (core)**
-- `/vouch @user [proof] [note]` and the `+rep @user` alias — each vouch gets a unique ID, optional proof link, timestamp.
+- `/vouch @user [proof] [note]` — each vouch gets a unique ID, optional proof link, timestamp. The `+rep @user [note]` text alias does the same but takes only an optional note (attach a proof link with `/vouch`). A per-member daily vouch cap (`MAX_VOUCHES_PER_DAY`) limits farming.
 - Trust tiers from vouches received; **auto-assigns `verified-trader`** at a configurable threshold.
 - `/profile [@user]` — vouches, trust, XP/rank, flair, completed-trade history.
 - `/rank [@user]`, `/leaderboard`, plus a **daily leaderboard** auto-posted to a channel.
@@ -41,7 +41,7 @@ server's existing Discord Onboarding roles instead of duplicating them.
 - Auto-maintained `#sprite-list` and `#gold-zp-list`, refreshed on a timer.
 
 **Insights (admin, AI-FREE)**
-- `/insights` scans recent message history (needs Message Content Intent) and reports **pure counts**: most-mentioned/most-requested sprites, busiest channels, most active members, open want-posts, top traders. No AI, no paid API.
+- `/insights [messages_per_channel]` scans recent message history (needs Message Content Intent; default 200 msgs/channel, clamped 20–1000) and reports **pure counts**: most-mentioned/most-requested sprites, busiest channels, most active members, open want-posts, top traders. No AI, no paid API.
 
 **Welcome** — greets new members, assigns **Newbie**, and explains onboarding roles, safe trading, the no-V-Bucks rule, and how vouching/flair works.
 
@@ -85,7 +85,7 @@ That's it. For 24/7 hosting (free **Oracle Cloud** or a ~$5/mo VPS), see **[HOST
 
 | Command | Who | What |
 |---|---|---|
-| `/vouch @user [proof] [note]` · `+rep @user` | anyone | Vouch for a trader |
+| `/vouch @user [proof] [note]` · `+rep @user [note]` | anyone | Vouch for a trader (`+rep` = note only) |
 | `/profile [@user]` · `/rank [@user]` | anyone | Reputation / progression |
 | `/leaderboard` | anyone | Top traders by vouches |
 | `/trade @user you_give they_give` | anyone | Two-party confirmed trade |
@@ -93,7 +93,7 @@ That's it. For 24/7 hosting (free **Oracle Cloud** or a ~$5/mo VPS), see **[HOST
 | `/reportscammer @user proof` | anyone | Report to modlog |
 | `/editvouch` · `/removevouch` | admin | Manage vouches |
 | `/blacklist` · `/unblacklist` | admin | Block from the system |
-| `/insights` | admin | AI-free analytics |
+| `/insights [messages_per_channel]` | admin | AI-free analytics |
 | `/setup` | admin | Auto-detect & save channel/role IDs |
 | `/refreshlists` · `/postleaderboard` | admin | Force the auto tasks |
 
