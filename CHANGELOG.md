@@ -3,6 +3,20 @@
 All notable changes to Sprite Trade Stop. Format: date — what — why.
 This project uses [Semantic Versioning](https://semver.org/).
 
+## [1.7.0] — 2026-06-19
+### Added — one-click control panel (Discord UX, researched)
+- **`/panel`** posts a persistent pinned **hub of buttons** so members click
+  instead of typing slash commands: My Collection, Find Trades, My Queues, Join
+  a Queue (dropdown of open queues), Sync, Open Tracker.
+- **Sync via modal:** the Sync button opens a pop-up form to paste the tracker
+  code — no `/synccollection` typing.
+- **Join a queue via dropdown:** pick an open queue from a select menu.
+- All panel replies are **ephemeral** (channels stay clean); slow actions
+  `defer(thinking=True)`. Buttons persist across restarts (`add_view`).
+- Refactored `find_matches()` shared by `/spritematch` and the panel.
+- Based on a discord.py 2.x UX research pass (hub pattern, selects, modals,
+  ephemeral-by-default were the top ranked wins).
+
 ## [1.6.0] — 2026-06-19
 ### Added — sprite hand-off queues
 - **`/queue` command group** (join, leave, mine, list, open, close, next, done,

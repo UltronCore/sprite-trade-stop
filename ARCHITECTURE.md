@@ -82,6 +82,8 @@ spritebot/
                              /guildprogress /spritematch + build_progress_embed()
     queue.py                 /queue group (join/leave/mine/list/open/close/next/
                              done/skip/board) + persistent Join/Leave buttons
+    hub.py                   /panel control panel: persistent button hub + sync
+                             modal + join-queue dropdown (click instead of type)
     insights.py              /insights (AI-free message counts)
     welcome.py               on_member_join: Newbie flair + welcome embed
     admin.py                 /setup, /digest, /announcenew, /postleaderboard,

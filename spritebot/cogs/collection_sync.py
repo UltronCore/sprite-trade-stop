@@ -214,22 +214,11 @@ class CollectionSync(commands.Cog):
                 "Sync your collection first with `/synccollection`.", ephemeral=True)
             return
         await interaction.response.defer(ephemeral=True)
-        mine = db.get_collection(interaction.user.id)
-        my_missing = {s["id"] for s in sprites.released() if mine.get(s["id"], 0) == 0}
-        # tally, per other member, how many of my missing sprites they have
-        tally = {}
-        for uid in db.users_with_collections():
-            if uid == interaction.user.id:
-                continue
-            theirs = db.get_collection(uid)
-            overlap = [sid for sid in my_missing if theirs.get(sid, 0) >= 1]
-            if overlap:
-                tally[uid] = overlap
-        if not tally:
+        ranked = find_matches(interaction.user.id)
+        if not ranked:
             await interaction.followup.send(
                 "No matches yet — more members need to `/synccollection`.", ephemeral=True)
             return
-        ranked = sorted(tally.items(), key=lambda kv: len(kv[1]), reverse=True)[:10]
         lines = []
         for uid, ov in ranked:
             m = interaction.guild.get_member(uid)
@@ -242,6 +231,22 @@ class CollectionSync(commands.Cog):
             description="\n".join(lines), color=discord.Color.blurple())
         embed.set_footer(text="Counts how many of YOUR missing sprites each member has.")
         await interaction.followup.send(embed=embed, ephemeral=True)
+
+
+def find_matches(user_id: int, limit: int = 10) -> list:
+    """Members who have sprites `user_id` is missing → [(uid, [sprite_ids]), …]
+    ranked by overlap size. Shared by /spritematch and the hub panel."""
+    mine = db.get_collection(user_id)
+    my_missing = {s["id"] for s in sprites.released() if mine.get(s["id"], 0) == 0}
+    tally = {}
+    for uid in db.users_with_collections():
+        if uid == user_id:
+            continue
+        theirs = db.get_collection(uid)
+        overlap = [sid for sid in my_missing if theirs.get(sid, 0) >= 1]
+        if overlap:
+            tally[uid] = overlap
+    return sorted(tally.items(), key=lambda kv: len(kv[1]), reverse=True)[:limit]
 
 
 def build_progress_embed(guild, title="📊 Server Sprite Progress"):

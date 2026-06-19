@@ -49,6 +49,9 @@ server's existing Discord Onboarding roles instead of duplicating them.
 - `/whohas <sprite> [gold]`, `/whoneeds <sprite>`, `/match` (HAVE ↔ NEED pairing).
 - Auto-maintained `#sprite-list` and `#gold-zp-list`, refreshed on a timer.
 
+**One-click control panel (no typing needed)**
+- `/panel` posts a pinned hub of buttons: **My Collection**, **Find Trades**, **My Queues**, **Join a Queue** (dropdown of open queues), **Sync** (paste your code in a pop-up form), and **Open Tracker**. Members click instead of remembering slash commands. Buttons persist across restarts; replies are private (ephemeral) so channels stay clean.
+
 **Sprite hand-off queues**
 - A distributor gives a rare sprite to members one at a time, in a fair FIFO line. `/queue open <sprite>` opens a queue (closed by default — open only the ones worth queueing), and posts a live **board with Join/Leave buttons** members just click.
 - `/queue next` pings the person at the front; `/queue done @user` removes them, **auto-marks the sprite as Have in their collection**, and nudges them to vouch. `/queue mine` shows everyone's positions.
@@ -114,6 +117,7 @@ That's it. For 24/7 hosting (free **Oracle Cloud** or a ~$5/mo VPS), see **[HOST
 | `/spriteprivacy <visible>` | anyone | Hide/show your collection in server features |
 | `/digest on\|off\|now` | admin | Weekly low-noise guild sprite digest |
 | `/announcenew` | admin | Announce sprites added since the last baseline |
+| `/panel` | admin | Post the one-click **control panel** (pin it) |
 
 Public and image-rendering commands have per-user **cooldowns** to prevent spam.
 The bot is **single-guild** (`GUILD_ID`) and refuses commands from other servers.
