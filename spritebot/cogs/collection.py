@@ -35,6 +35,21 @@ class Collection(commands.Cog):
             except Exception:
                 pass
 
+    @staticmethod
+    def _participating_ids(guild: discord.Guild) -> set:
+        """Members who hold at least one sprite role (i.e. completed onboarding).
+
+        Used to scope 'who needs X' to real participants — a member who never
+        picked any sprite role isn't genuinely 'missing everything', they just
+        haven't onboarded, and listing them produces false trade targets."""
+        ids = set()
+        for sprite in config.SPRITE_ROLES:
+            for gold in (False, True):
+                role = settings.sprite_role(guild, sprite, gold=gold)
+                if role:
+                    ids.update(m.id for m in role.members if not m.bot)
+        return ids
+
     @app_commands.command(description="List members who HAVE a sprite.")
     @app_commands.describe(sprite="Which sprite", gold="Gold variant?")
     @app_commands.choices(sprite=_sprite_choices())
@@ -71,16 +86,19 @@ class Collection(commands.Cog):
                 f"Role for {sprite} not found.", ephemeral=True)
             return
         haves = {m.id for m in role.members}
+        participating = self._participating_ids(interaction.guild)
+        # Only count members who've onboarded (hold ≥1 sprite role) as "needing"
+        # it — avoids flagging everyone who never picked any roles.
         needs = [m for m in interaction.guild.members
-                 if not m.bot and m.id not in haves]
+                 if not m.bot and m.id not in haves and m.id in participating]
         names = ", ".join(m.display_name for m in needs[:50])
         more = f" …and {len(needs) - 50} more" if len(needs) > 50 else ""
         embed = discord.Embed(
             title=f"🔴 Need {sprite} ({len(needs)})",
-            description=names or "Everyone has it! 🎉",
+            description=names or "Every active collector has it! 🎉",
             color=discord.Color.red())
-        if more:
-            embed.set_footer(text=more)
+        embed.set_footer(text=(more + " · " if more else "")
+                         + "only members who picked sprite roles are shown")
         await interaction.followup.send(embed=embed)
 
     @app_commands.command(description="Find HAVE↔NEED matches for a sprite.")
@@ -95,8 +113,9 @@ class Collection(commands.Cog):
             return
         haves = [m for m in role.members if not m.bot]
         have_ids = {m.id for m in haves}
+        participating = self._participating_ids(interaction.guild)
         needs = [m for m in interaction.guild.members
-                 if not m.bot and m.id not in have_ids]
+                 if not m.bot and m.id not in have_ids and m.id in participating]
         if not haves or not needs:
             await interaction.followup.send(
                 f"No matches possible for {sprite} right now "

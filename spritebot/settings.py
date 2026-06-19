@@ -88,9 +88,8 @@ def is_admin(member: discord.Member) -> bool:
         return True
     if admin_id and admin_id in member_role_ids:
         return True
-    # Fallback to name match only when /setup hasn't resolved the role IDs yet.
-    if owner_id is None and admin_id is None:
-        names = {r.name.lower() for r in member.roles}
-        return (config.OWNER_ROLE_NAME.lower() in names
-                or config.ADMIN_ROLE_NAME.lower() in names)
+    # No role-NAME fallback: a self-assignable role literally named "Admin"
+    # must not grant bot-admin. Authorization comes only from configured IDs,
+    # /setup-resolved role IDs, or Discord's Administrator/Manage Server perms
+    # (both already checked above). Run /setup to resolve the Owner/Admin roles.
     return False

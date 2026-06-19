@@ -6,11 +6,14 @@ Also hosts the background tasks: daily leaderboard auto-post + periodic
 auto-list refresh.
 """
 
+from datetime import time as dt_time
+from datetime import timezone
+
 import discord
 from discord import app_commands
 from discord.ext import commands, tasks
 
-from .. import config, db, progression, settings
+from .. import config, db, progression, settings, sprites
 from .collection import rebuild_lists
 from .collection_sync import build_progress_embed
 
@@ -21,11 +24,13 @@ class Admin(commands.Cog):
         self.periodic_refresh.start()
         self.daily_leaderboard.start()
         self.weekly_digest.start()
+        self.announce_new_releases_once.start()
 
     def cog_unload(self):
         self.periodic_refresh.cancel()
         self.daily_leaderboard.cancel()
         self.weekly_digest.cancel()
+        self.announce_new_releases_once.cancel()
 
     # ---- /setup ---------------------------------------------------------
     @app_commands.command(
@@ -130,7 +135,9 @@ class Admin(commands.Cog):
     async def before_refresh(self):
         await self.bot.wait_until_ready()
 
-    @tasks.loop(hours=24)
+    # Fixed clock time (18:00 UTC) so it posts once per day at a stable time
+    # instead of drifting from process start and double-posting on restarts.
+    @tasks.loop(time=dt_time(hour=18, minute=0, tzinfo=timezone.utc))
     async def daily_leaderboard(self):
         for guild in self.bot.guilds:
             try:
@@ -156,6 +163,52 @@ class Admin(commands.Cog):
     @weekly_digest.before_loop
     async def before_digest(self):
         await self.bot.wait_until_ready()
+
+    # ---- "new sprite released" announcement ----------------------------
+    # Sprites have no live API, so the catalog (spritebot/assets/sprites.json)
+    # is operator-updated: when you ship a new variant's art and bump the
+    # manifest, the bot detects the new released id on next start and announces
+    # it once. Deterministic, no scraping. First run just records a baseline.
+    @tasks.loop(count=1)
+    async def announce_new_releases_once(self):
+        current = {s["id"] for s in sprites.released()}
+        seen_raw = db.get_setting("seen_released")
+        if seen_raw is None:
+            db.set_setting("seen_released", ",".join(sorted(current)))
+            return
+        seen = set(seen_raw.split(",")) if seen_raw else set()
+        new_ids = current - seen
+        if new_ids:
+            for guild in self.bot.guilds:
+                try:
+                    await post_new_sprites(guild, new_ids)
+                except Exception as e:  # noqa: BLE001
+                    print(f"[announce] {guild.id}: {e}")
+        db.set_setting("seen_released", ",".join(sorted(current)))
+
+    @announce_new_releases_once.before_loop
+    async def before_announce(self):
+        await self.bot.wait_until_ready()
+
+    @app_commands.command(
+        description="(Admin) Re-announce sprites added since the last baseline.")
+    async def announcenew(self, interaction: discord.Interaction):
+        if not settings.is_admin(interaction.user):
+            await interaction.response.send_message("Admins only.", ephemeral=True)
+            return
+        await interaction.response.defer(ephemeral=True)
+        current = {s["id"] for s in sprites.released()}
+        seen_raw = db.get_setting("seen_released") or ""
+        new_ids = current - (set(seen_raw.split(",")) if seen_raw else set())
+        if not new_ids:
+            await interaction.followup.send("No new released sprites to announce.",
+                                            ephemeral=True)
+            return
+        posted = await post_new_sprites(interaction.guild, new_ids)
+        db.set_setting("seen_released", ",".join(sorted(current)))
+        await interaction.followup.send(
+            f"Announced {len(new_ids)} new sprite(s)." if posted else
+            "No news/digest channel configured to post in.", ephemeral=True)
 
     @app_commands.command(description="(Admin) Weekly sprite digest: on / off / now.")
     @app_commands.describe(action="Enable, disable, or post immediately")
@@ -188,6 +241,32 @@ class Admin(commands.Cog):
                 "Digest posted." if posted else
                 "Nobody's synced a collection yet, or no digest/leaderboard "
                 "channel is configured.", ephemeral=True)
+
+
+async def post_new_sprites(guild, new_ids) -> bool:
+    """Announce newly-released sprites to the news (or digest/leaderboard) channel."""
+    ch = (settings.get_channel(guild, "news")
+          or settings.get_channel(guild, "digest")
+          or settings.get_channel(guild, "leaderboard"))
+    if not ch:
+        return False
+    items = [sprites.BY_ID[i] for i in new_ids if i in sprites.BY_ID]
+    items.sort(key=lambda s: s["name"])
+    lines = [f"• **{s['name']}** ({s['rarity']})" for s in items[:25]]
+    embed = discord.Embed(
+        title=f"🆕 {len(items)} new sprite{'s' if len(items) != 1 else ''} released!",
+        description="\n".join(lines) + f"\n\nTrack them on the tracker: {config.TRACKER_URL}",
+        color=discord.Color.gold())
+    embed.set_footer(text="Update your collection with /synccollection or /spriteset")
+    # Show the first new sprite's art if we have it.
+    first = items[0]["id"] if items else None
+    if first and sprites.image_path(first).exists():
+        file = discord.File(sprites.image_path(first), filename=f"{first}.png")
+        embed.set_thumbnail(url=f"attachment://{first}.png")
+        await ch.send(embed=embed, file=file)
+    else:
+        await ch.send(embed=embed)
+    return True
 
 
 async def post_digest(guild) -> bool:

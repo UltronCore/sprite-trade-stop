@@ -192,6 +192,21 @@ def already_vouched(voucher_id: int, target_id: int) -> bool:
     return row is not None
 
 
+def seconds_since_pair_vouch(voucher_id: int, target_id: int):
+    """Seconds since this voucher last vouched this target, or None if never.
+
+    Used for the per-pair cooldown so repeat trading partners can keep building
+    trust over time without instant ring-farming."""
+    c = connect()
+    row = c.execute(
+        "SELECT MAX(created_at) last FROM vouches WHERE voucher_id=? AND target_id=?",
+        (voucher_id, target_id),
+    ).fetchone()
+    if not row or row["last"] is None:
+        return None
+    return now() - row["last"]
+
+
 def leaderboard(limit: int = 10):
     """Top members by active vouches received (blacklisted users excluded)."""
     c = connect()
@@ -234,6 +249,15 @@ def get_trade_by_message(message_id: int):
     c = connect()
     return c.execute("SELECT * FROM trades WHERE message_id=?",
                      (message_id,)).fetchone()
+
+
+def pending_trade_between(a: int, b: int):
+    """Return an open (pending) trade between this pair, either direction."""
+    c = connect()
+    return c.execute(
+        "SELECT * FROM trades WHERE status='pending' AND "
+        "((party_a=? AND party_b=?) OR (party_a=? AND party_b=?)) LIMIT 1",
+        (a, b, b, a)).fetchone()
 
 
 def set_trade_message(trade_id: int, message_id: int) -> None:

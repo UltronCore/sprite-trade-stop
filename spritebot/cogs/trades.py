@@ -118,11 +118,18 @@ class Trades(commands.Cog):
     @app_commands.describe(user="The other trader",
                            you_give="What you will drop/give",
                            they_give="What they will drop/give")
+    @app_commands.checks.cooldown(1, config.TRADE_COOLDOWN_SECONDS)
     async def trade(self, interaction: discord.Interaction,
                     user: discord.Member, you_give: str, they_give: str):
         if user.id == interaction.user.id or user.bot:
             await interaction.response.send_message(
                 "Pick another (human) trader.", ephemeral=True)
+            return
+        # Block duplicate unsolicited trades against the same person (anti-spam).
+        if db.pending_trade_between(interaction.user.id, user.id):
+            await interaction.response.send_message(
+                f"You already have an open trade with {user.mention}. Close it "
+                f"before opening another.", ephemeral=True)
             return
         # Both parties must pass blacklist + minimum-account-age (same gate as
         # vouching) so fresh alts can't open trades to farm completed-trade counts.

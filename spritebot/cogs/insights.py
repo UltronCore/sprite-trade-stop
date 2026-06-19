@@ -40,7 +40,10 @@ class Insights(commands.Cog):
         open_wants = 0
 
         limit = max(20, min(messages_per_channel, 1000))
+        excluded = {n.lower() for n in config.INSIGHTS_EXCLUDED_CHANNELS}
         for channel in interaction.guild.text_channels:
+            if channel.name.lower() in excluded:
+                continue  # keep staff/private channels out of the aggregate
             perms = channel.permissions_for(interaction.guild.me)
             if not perms.read_message_history:
                 continue

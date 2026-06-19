@@ -12,6 +12,7 @@ the site into /synccollection and it decodes to the exact same collection.
 
 import base64
 import json
+import re
 from pathlib import Path
 
 _ASSETS = Path(__file__).parent / "assets"
@@ -49,23 +50,38 @@ def extract_code(text: str) -> str:
     return text
 
 
+# A valid code packs exactly len(SHARE_ORDER) statuses at 4 per byte.
+_EXPECTED_BYTES = (len(SHARE_ORDER) + 3) // 4
+_CODE_RE = re.compile(r"^[A-Za-z0-9_-]+$")
+
+
 def decode(code: str) -> dict[str, int]:
-    """Decode a share code into {sprite_id: status}. Raises ValueError if bad."""
+    """Decode a share code into {sprite_id: status}, with STRICT validation.
+
+    Rejects anything that isn't a real tracker code: wrong charset, wrong
+    decoded length, or impossible status values (only 0/1/2 are valid). This
+    keeps garbage like 'abc' or '!!!!' from being stored as a collection.
+    """
     code = extract_code(code)
-    if not code:
-        raise ValueError("empty code")
-    # restore base64 padding + url-safe chars
+    if not code or not _CODE_RE.match(code):
+        raise ValueError("not a valid sync code")
     b64 = code.replace("-", "+").replace("_", "/")
     b64 += "=" * (-len(b64) % 4)
     try:
-        raw = base64.b64decode(b64)
+        raw = base64.b64decode(b64, validate=True)
     except Exception as e:  # noqa: BLE001
         raise ValueError("not a valid sync code") from e
+    if len(raw) != _EXPECTED_BYTES:
+        raise ValueError(
+            f"sync code has the wrong length (got {len(raw)} bytes, "
+            f"expected {_EXPECTED_BYTES})")
 
     status: dict[str, int] = {}
     for i, sid in enumerate(SHARE_ORDER):
-        byte = raw[i >> 2] if (i >> 2) < len(raw) else 0
-        status[sid] = (byte >> ((i % 4) * 2)) & 0b11
+        v = (raw[i >> 2] >> ((i % 4) * 2)) & 0b11
+        if v == 3:  # 3 is never produced by the tracker (statuses are 0/1/2)
+            raise ValueError("sync code contains an invalid status value")
+        status[sid] = v
     return status
 
 

@@ -45,6 +45,7 @@ class CollectionSync(commands.Cog):
     @app_commands.command(
         description="Import your collection from the web tracker (paste the sync code or link).")
     @app_commands.describe(code="Your share code or full tracker link from the 'Copy sync code' button")
+    @app_commands.checks.cooldown(2, 30.0)
     async def synccollection(self, interaction: discord.Interaction, code: str):
         try:
             status = sprites.decode(code)
@@ -61,11 +62,13 @@ class CollectionSync(commands.Cog):
             ephemeral=True)
 
     @app_commands.command(description="Post your collection image (synced from the tracker).")
+    @app_commands.checks.cooldown(1, 15.0)  # image render — guard against spam
     async def mycollection(self, interaction: discord.Interaction,
                            user: discord.Member = None):
         await self._post_image(interaction, user, "collection")
 
     @app_commands.command(description="Post the sprites you still need.")
+    @app_commands.checks.cooldown(1, 15.0)  # image render — guard against spam
     async def missing(self, interaction: discord.Interaction,
                       user: discord.Member = None):
         await self._post_image(interaction, user, "missing")
@@ -92,6 +95,7 @@ class CollectionSync(commands.Cog):
 
     @app_commands.command(description="Who (that synced) has a given sprite?")
     @app_commands.describe(sprite="Sprite name")
+    @app_commands.checks.cooldown(3, 15.0)
     async def holders(self, interaction: discord.Interaction, sprite: str):
         sp = sprites.BY_ID.get(sprite)
         if not sp:
@@ -122,6 +126,7 @@ class CollectionSync(commands.Cog):
 
     @app_commands.command(description="Look up a sprite: image, rarity, and who has it.")
     @app_commands.describe(sprite="Sprite name")
+    @app_commands.checks.cooldown(3, 10.0)
     async def spriteinfo(self, interaction: discord.Interaction, sprite: str):
         sp = sprites.BY_ID.get(sprite) or next(
             (s for s in sprites.SPRITES if s["name"].lower() == sprite.lower()), None)
@@ -191,6 +196,7 @@ class CollectionSync(commands.Cog):
         await interaction.response.send_message(msg, ephemeral=True)
 
     @app_commands.command(description="Server-wide sprite collection progress.")
+    @app_commands.checks.cooldown(2, 15.0)
     async def guildprogress(self, interaction: discord.Interaction):
         embed = build_progress_embed(interaction.guild)
         if embed is None:
@@ -200,39 +206,8 @@ class CollectionSync(commands.Cog):
             return
         await interaction.response.send_message(embed=embed)
 
-
-def build_progress_embed(guild, title="📊 Server Sprite Progress"):
-    """Shared builder for /guildprogress and the scheduled digest.
-    Returns None if nobody (non-private) has synced. Excludes private members."""
-    synced = db.users_with_collections()
-    if not synced:
-        return None
-    rel = sprites.released()
-    total = len(rel)
-    lb = db.collection_leaderboard(100)
-    avg = sum(r["n"] for r in lb) / len(lb) if lb else 0
-    completionists = sum(1 for r in lb if r["n"] >= total)
-    counts = db.have_counts()
-    needed = sorted(rel, key=lambda s: counts.get(s["id"], 0))[:5]
-    need_lines = [f"• **{s['name']}** — {len(synced) - counts.get(s['id'], 0)} still need it"
-                  for s in needed]
-    embed = discord.Embed(
-        title=title, color=discord.Color.blurple(),
-        description=(f"**{len(synced)}** members synced · "
-                     f"avg **{avg:.0f}/{total}** collected · "
-                     f"**{completionists}** completed all {total} 🏆"),
-    )
-    embed.add_field(name="Most-needed sprites", value="\n".join(need_lines), inline=False)
-    medals = ["🥇", "🥈", "🥉", "🏅", "🏅"]
-    top = []
-    for i, r in enumerate(lb[:5]):
-        m = guild.get_member(r["user_id"])
-        top.append(f"{medals[i]} {m.display_name if m else r['user_id']} — {r['n']}/{total}")
-    if top:
-        embed.add_field(name="Top collectors", value="\n".join(top), inline=False)
-    return embed
-
     @app_commands.command(description="Find members who have sprites you're missing.")
+    @app_commands.checks.cooldown(2, 20.0)
     async def spritematch(self, interaction: discord.Interaction):
         if not db.has_collection(interaction.user.id):
             await interaction.response.send_message(
@@ -267,6 +242,38 @@ def build_progress_embed(guild, title="📊 Server Sprite Progress"):
             description="\n".join(lines), color=discord.Color.blurple())
         embed.set_footer(text="Counts how many of YOUR missing sprites each member has.")
         await interaction.followup.send(embed=embed, ephemeral=True)
+
+
+def build_progress_embed(guild, title="📊 Server Sprite Progress"):
+    """Shared builder for /guildprogress and the scheduled digest.
+    Returns None if nobody (non-private) has synced. Excludes private members."""
+    synced = db.users_with_collections()
+    if not synced:
+        return None
+    rel = sprites.released()
+    total = len(rel)
+    lb = db.collection_leaderboard(100)
+    avg = sum(r["n"] for r in lb) / len(lb) if lb else 0
+    completionists = sum(1 for r in lb if r["n"] >= total)
+    counts = db.have_counts()
+    needed = sorted(rel, key=lambda s: counts.get(s["id"], 0))[:5]
+    need_lines = [f"• **{s['name']}** — {len(synced) - counts.get(s['id'], 0)} still need it"
+                  for s in needed]
+    embed = discord.Embed(
+        title=title, color=discord.Color.blurple(),
+        description=(f"**{len(synced)}** members synced · "
+                     f"avg **{avg:.0f}/{total}** collected · "
+                     f"**{completionists}** completed all {total} 🏆"),
+    )
+    embed.add_field(name="Most-needed sprites", value="\n".join(need_lines), inline=False)
+    medals = ["🥇", "🥈", "🥉", "🏅", "🏅"]
+    top = []
+    for i, r in enumerate(lb[:5]):
+        m = guild.get_member(r["user_id"])
+        top.append(f"{medals[i]} {m.display_name if m else r['user_id']} — {r['n']}/{total}")
+    if top:
+        embed.add_field(name="Top collectors", value="\n".join(top), inline=False)
+    return embed
 
 
 async def setup(bot):

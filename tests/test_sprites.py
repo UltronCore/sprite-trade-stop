@@ -39,13 +39,18 @@ def test_decode_accepts_full_url():
 
 
 def test_decode_rejects_garbage():
+    # Strict validation: bad charset, wrong length, and empty all rejected.
+    for bad in ["", "!!!!", "abc", "xx", "@@@@", "QgAA"]:
+        with pytest.raises(ValueError):
+            sprites.decode(bad)
+
+
+def test_decode_rejects_invalid_status_value():
+    # A right-length code whose bits include status 3 (impossible) is rejected.
+    import base64
+    bad = base64.b64encode(b"\xff" * sprites._EXPECTED_BYTES).decode()
     with pytest.raises(ValueError):
-        sprites.decode("")
-    # non-base64 still decodes leniently to all-missing or raises; ensure no crash
-    try:
-        sprites.decode("!!!!")
-    except ValueError:
-        pass
+        sprites.decode(bad)
 
 
 def test_summarize():

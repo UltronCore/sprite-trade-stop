@@ -48,6 +48,7 @@ CHANNELS = {
     "gold_zp_list": "gold-zp-list",     # auto-maintained Gold Zero Point list
     "welcome": "welcome",               # welcome messages on join
     "digest": "sprite-digest",          # optional weekly guild digest channel
+    "news": "news",                     # where "new sprite released" announcements post
 }
 
 # ---------------------------------------------------------------------------
@@ -100,8 +101,17 @@ XP_PER_VOUCH = 10          # XP granted per vouch received
 # Anti-scam
 # ---------------------------------------------------------------------------
 MIN_ACCOUNT_AGE_DAYS = 7   # minimum Discord account age to give/receive vouches
+MIN_GUILD_TENURE_HOURS = 24  # how long a member must be IN the server before vouching
 MAX_VOUCHES_PER_DAY = 10   # max vouches one member can GIVE per 24h (anti-farming)
+# Repeat vouches between the SAME pair are allowed, but only once per this
+# window — so regular trading partners keep building trust without ring-farming.
+VOUCH_PAIR_COOLDOWN_HOURS = 24
 SCAM_REPORT_COOLDOWN_SECONDS = 60  # min seconds between a user's scam reports
+TRADE_COOLDOWN_SECONDS = 30        # min seconds between opening trades (anti-spam)
+
+# /insights: channels to skip when scanning (names, case-insensitive). Keeps
+# staff/private channels out of the aggregate even if the bot can read them.
+INSIGHTS_EXCLUDED_CHANNELS = ["mod-chat", "staff", "admin", "logs", "modlog"]
 
 # ---------------------------------------------------------------------------
 # Misc

@@ -52,8 +52,46 @@ class SpriteTradeBot(commands.Bot):
 
     async def setup_hook(self):
         db.setup()
+        # Single-guild by design: all data is keyed by user id with no guild
+        # column, so the bot must only operate in the configured guild. This
+        # check makes cross-guild data bleed impossible if it's ever added to
+        # another server. (No-op when GUILD_ID is 0, e.g. local dev.)
+        async def _guild_guard(interaction: discord.Interaction) -> bool:
+            if not config.GUILD_ID or interaction.guild_id == config.GUILD_ID:
+                return True
+            try:
+                await interaction.response.send_message(
+                    "This bot is configured for one specific server only.",
+                    ephemeral=True)
+            except discord.InteractionResponded:
+                pass
+            return False
+        self.tree.interaction_check = _guild_guard
+        self.tree.on_error = self._on_app_error
+
         # Persistent view so trade Confirm/Cancel buttons work after a restart.
         self.add_view(TradeConfirmView())
+
+    async def _on_app_error(self, interaction: discord.Interaction, error):
+        # Friendly, non-crashing handling for cooldowns / permission checks.
+        from discord import app_commands
+        msg = None
+        if isinstance(error, app_commands.CommandOnCooldown):
+            msg = f"⏳ Slow down — try again in {error.retry_after:.0f}s."
+        elif isinstance(error, app_commands.MissingPermissions):
+            msg = "You don't have permission to do that."
+        elif isinstance(error, app_commands.CheckFailure):
+            return  # handled by the check itself (e.g. guild guard)
+        if msg is None:
+            print(f"[app error] {type(error).__name__}: {error}")
+            msg = "Something went wrong running that command."
+        try:
+            if interaction.response.is_done():
+                await interaction.followup.send(msg, ephemeral=True)
+            else:
+                await interaction.response.send_message(msg, ephemeral=True)
+        except discord.HTTPException:
+            pass
         for ext in COGS:
             await self.load_extension(ext)
         # Sync slash commands. If GUILD_ID is set, sync to that guild for

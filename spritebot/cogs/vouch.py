@@ -15,7 +15,7 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
-from .. import db, helpers, progression, settings
+from .. import config, db, helpers, progression, settings
 
 
 class Vouch(commands.Cog):
@@ -39,8 +39,15 @@ class Vouch(commands.Cog):
         limited, why = helpers.vouch_rate_limited(voucher.id)
         if limited:
             return why
-        if db.already_vouched(voucher.id, target.id):
-            return f"You've already vouched for {target.display_name}."
+        # Per-pair cooldown: repeat vouches between the same two people are
+        # allowed (regular trading partners keep building trust), but only once
+        # per cooldown window — blunts instant ring-farming.
+        since = db.seconds_since_pair_vouch(voucher.id, target.id)
+        cooldown = config.VOUCH_PAIR_COOLDOWN_HOURS * 3600
+        if since is not None and since < cooldown:
+            hrs = (cooldown - since) / 3600
+            return (f"You vouched for {target.display_name} recently — you can "
+                    f"vouch them again in {hrs:.0f}h (after another trade).")
 
         # Cap stored free-text so it can never blow Discord's 1024-char field
         # limit when echoed into embeds later.
@@ -121,8 +128,9 @@ class Vouch(commands.Cog):
         embed.add_field(name="Verified",
                         value="🛡️ Yes" if progression.is_verified_trader(vouches) else "No")
         embed.add_field(name="Completed trades", value=str(trades))
-        if db.is_blacklisted(user.id):
-            embed.add_field(name="⚠️", value="Blacklisted", inline=False)
+        # Blacklist is moderation state — only show it to admins.
+        if db.is_blacklisted(user.id) and settings.is_admin(interaction.user):
+            embed.add_field(name="⚠️ Mod", value="Blacklisted", inline=False)
 
         recent = db.vouches_for(user.id, limit=5)
         if recent:

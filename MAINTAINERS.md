@@ -3,6 +3,22 @@
 Written so a brand-new person — or a fresh AI session with **zero prior
 context** — can pick this up and keep building. Read top to bottom once.
 
+> **Start with [ARCHITECTURE.md](ARCHITECTURE.md)** — the complete "what it does
+> and how" map (subsystems, data model, web↔bot bridge, jobs, safety). This file
+> is the hands-on day-to-day reference.
+
+## Regenerating the sprite manifest (when a sprite/variant ships)
+The catalog `spritebot/assets/sprites.json` is generated **from the web tracker's
+`data.js`** so the share-code order never drifts. To update it:
+```bash
+# in the sprite-tracker repo:
+cp data.js /tmp/_d.js && printf '\nmodule.exports={SPRITES,THEMES,SHARE_ORDER};\n' >> /tmp/_d.js
+node -e "const d=require('/tmp/_d.js');process.stdout.write(JSON.stringify({share_order:d.SHARE_ORDER,themes:d.THEMES,sprites:d.SPRITES},null,2))" \
+  > /path/to/sprite-trade-stop/spritebot/assets/sprites.json
+cp sprites/<newid>.png /path/to/sprite-trade-stop/spritebot/assets/sprites/   # new art
+```
+Restart the bot → `announce_new_releases_once` posts the new sprite to `#news`.
+
 ## What this bot is
 A discord.py 2.x bot for a Fortnite sprite **trading** community. Core loop:
 members trade sprites in-game, then **vouch** each other; vouches drive **trust

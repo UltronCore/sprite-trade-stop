@@ -3,6 +3,46 @@
 All notable changes to Sprite Trade Stop. Format: date — what — why.
 This project uses [Semantic Versioning](https://semver.org/).
 
+## [1.5.0] — 2026-06-19
+Hardening pass from two external QA reviews (product + security) + a full docs
+revamp for clean handoff.
+
+### Fixed
+- **Regression: `/spritematch` had silently stopped registering.** A shared
+  helper had been placed mid-class, orphaning the command as dead code. Moved
+  it to module scope and added a **registration guard test** (`test_commands.py`)
+  so the whole command set is asserted on every CI run.
+- **Malformed sync codes were accepted.** `sprites.decode` now strictly
+  validates charset, exact decoded length, and status values (rejects `abc`,
+  `!!!!`, truncated, and impossible codes) instead of storing garbage.
+
+### Security / abuse hardening
+- **Single-guild guard:** the bot now refuses interactions from any guild other
+  than `GUILD_ID`, making cross-guild data bleed impossible (the data model is
+  intentionally single-tenant).
+- **Cooldowns** on public + image-rendering commands (`/trade`,
+  `/synccollection`, `/mycollection`, `/missing`, `/spriteinfo`,
+  `/guildprogress`, `/spritematch`, `/holders`) via a global error handler.
+- **Trade anti-spam:** blocks a second open trade between the same pair + a
+  per-user cooldown.
+- **Vouch rules:** replaced the once-ever per-pair block with a **per-pair
+  cooldown** (repeat trading partners keep earning trust) + a **server-join
+  tenure** gate on top of account age.
+- **Admin auth:** removed the role-*name* fallback — authorization is IDs +
+  Discord permissions only.
+- **`/profile`** shows blacklist state to admins only; **`/insights`** skips
+  configured staff/private channels.
+- **Daily leaderboard** now posts at a fixed UTC time (no drift / double-posts).
+
+### Added
+- **`/announcenew`** + an automatic startup check: when the operator ships a new
+  sprite's art and bumps the manifest, the bot announces newly-released sprites
+  once to `#news` (catalog-diff; no scraping, since there's no live Sprites API).
+
+### Docs
+- Rewrote README, MAINTAINERS, and added **ARCHITECTURE.md** (full "what it does
+  and how" for cold handoff). Updated ISSUES.
+
 ## [1.4.0] — 2026-06-19
 ### Added — privacy + low-noise digest (from the Codex skills audit)
 - **`/spriteprivacy <visible>`** — opt your collection out of guild-visible

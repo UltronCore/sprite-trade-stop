@@ -79,6 +79,15 @@ def eligible_to_vouch(member: discord.Member) -> tuple[bool, str]:
                 f"{member.display_name}'s account is too new ({age_days}d old); "
                 f"it must be at least {config.MIN_ACCOUNT_AGE_DAYS} days old to "
                 f"use the trade/vouch system.")
+    # Server-join tenure (harder to farm than account age). joined_at can be
+    # None if the member isn't fully cached — treat that as "unknown, allow".
+    if member.joined_at is not None and config.MIN_GUILD_TENURE_HOURS:
+        tenure_h = (discord.utils.utcnow() - member.joined_at).total_seconds() / 3600
+        if tenure_h < config.MIN_GUILD_TENURE_HOURS:
+            return (False,
+                    f"{member.display_name} joined too recently; members must be "
+                    f"in the server {config.MIN_GUILD_TENURE_HOURS}h before "
+                    f"using the trade/vouch system.")
     return True, ""
 
 

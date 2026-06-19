@@ -11,8 +11,15 @@ A custom, open-source Discord bot for **Sprite Trade Stop**, a Fortnite sprite
 **free to run** (no paid AI APIs), beginner-friendly, and to work *with* the
 server's existing Discord Onboarding roles instead of duplicating them.
 
-> New here (owner or a future maintainer)? This README gets you running.
-> For architecture and how to extend it, read **[MAINTAINERS.md](MAINTAINERS.md)**.
+> **New here (owner or a future maintainer)?** This README gets you running.
+> For the full "what it does and how it works" — every subsystem, the data
+> model, and how to extend it — read **[ARCHITECTURE.md](ARCHITECTURE.md)**.
+> For day-to-day maintenance, **[MAINTAINERS.md](MAINTAINERS.md)**.
+
+### How it fits together (30-second version)
+- **Web tracker** ([sprite-tracker](https://ultroncore.github.io/sprite-tracker/)) = the *editor*: members mark Have/Missing/Mastered on a grid and click **Copy sync code**.
+- **This bot** = the *social layer*: `/synccollection <code>` imports it, then the bot renders collection images, finds trade matches, and runs the vouch/trust economy — all in Discord.
+- Two collection sources by design: **onboarding roles** (coarse/public — `/whohas`, `/whoneeds`, `/match`) and **synced collections** (full — `/holders`, `/spritematch`, `/guildprogress`, …). See [ARCHITECTURE.md §2](ARCHITECTURE.md).
 
 ---
 
@@ -98,6 +105,10 @@ That's it. For 24/7 hosting (free **Oracle Cloud** or a ~$5/mo VPS), see **[HOST
 | `/guildprogress` | anyone | Server-wide completion, most-needed sprites, top collectors |
 | `/spriteprivacy <visible>` | anyone | Hide/show your collection in server features |
 | `/digest on\|off\|now` | admin | Weekly low-noise guild sprite digest |
+| `/announcenew` | admin | Announce sprites added since the last baseline |
+
+Public and image-rendering commands have per-user **cooldowns** to prevent spam.
+The bot is **single-guild** (`GUILD_ID`) and refuses commands from other servers.
 | `/reportscammer @user proof` | anyone | Report to modlog |
 | `/editvouch` · `/removevouch` | admin | Manage vouches |
 | `/blacklist` · `/unblacklist` | admin | Block from the system |

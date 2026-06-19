@@ -93,6 +93,24 @@ def test_scam_report_cooldown_query():
     assert db.seconds_since_last_report(7) < 5
 
 
+def test_pair_vouch_cooldown_tracking():
+    assert db.seconds_since_pair_vouch(1, 2) is None
+    db.add_vouch(1, 2)
+    s = db.seconds_since_pair_vouch(1, 2)
+    assert s is not None and s < 5
+    # different pair is independent
+    assert db.seconds_since_pair_vouch(1, 3) is None
+
+
+def test_pending_trade_between_either_direction():
+    tid = db.create_trade(1, 2, "Ghost", "Duck")
+    assert db.pending_trade_between(1, 2) is not None
+    assert db.pending_trade_between(2, 1) is not None   # either direction
+    assert db.pending_trade_between(1, 9) is None
+    db.set_trade_status(tid, "complete")
+    assert db.pending_trade_between(1, 2) is None        # only counts pending
+
+
 def test_blacklist():
     db.add_blacklist(5, "scammer")
     assert db.is_blacklisted(5)

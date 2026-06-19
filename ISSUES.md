@@ -37,6 +37,28 @@ future AI session). File these as GitHub issues if you want tracking.
 - [ ] Optionally require a completed `/trade` between two users before a vouch
       between them counts, tying reputation to real trade records.
 
+## Hardened in the v1.5.0 QA pass (external product + security reviews)
+- **Regression fixed:** `/spritematch` had silently de-registered; restored + a
+  `test_commands.py` guard now asserts the full command set on every CI run. ✅
+- **Strict sync-code validation** — garbage codes are rejected, not stored. ✅
+- **Single-guild guard** — cross-guild data bleed is now impossible. ✅
+- **Cooldowns** on public + image commands; **trade** anti-spam (dup-pair block). ✅
+- **Vouch**: per-pair cooldown (repeat trust ok) + server-join tenure gate. ✅
+- **Admin** auth = IDs/Discord-perms only (no role-name trust). ✅
+- `/profile` blacklist admin-only; `/insights` skips staff channels;
+  daily leaderboard at a fixed UTC time. ✅
+- **New-sprite announcement** (`/announcenew` + startup catalog-diff). ✅
+
+## Still open (deferred, with reasons)
+- **Reciprocal-ring detection** for vouches (A↔B↔C farming over time). The daily
+  cap + per-pair cooldown + tenure blunt it; full graph detection is a bigger build.
+- **Per-level (0–5) sprite tracking** to mirror the in-game 205-level total
+  (Mastery bar is currently binary mastered/not).
+- **`/match` pairing is order-based**, not an optimal overlap solve. `/spritematch`
+  (synced-data) is the smarter path; `/match` stays a quick role-based heuristic.
+- **Collection sync is pull-based** (re-run `/synccollection` after web edits) —
+  intentional, to keep the web side a free static site with no backend.
+
 ## Hardened in the v1.0.1 QA pass
 - **Trade two-party confirm race** → atomic `complete_if_both_confirmed` (no double completion). ✅
 - **`+rep` in DMs** no longer crashes (`@commands.guild_only()` + error handler). ✅
