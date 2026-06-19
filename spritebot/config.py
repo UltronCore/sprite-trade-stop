@@ -49,6 +49,7 @@ CHANNELS = {
     "welcome": "welcome",               # welcome messages on join
     "digest": "sprite-digest",          # optional weekly guild digest channel
     "news": "news",                     # where "new sprite released" announcements post
+    "queue": "sprite-queue",            # where queue boards + "you're up" pings post
 }
 
 # ---------------------------------------------------------------------------
@@ -77,6 +78,17 @@ STARTER_SPRITES = ["Fire", "Earth", "Water"]
 VERIFIED_TRADER_ROLE_NAME = "verified-trader"
 # Number of (non-removed) vouches received to auto-assign verified-trader.
 VERIFIED_TRADER_THRESHOLD = 5
+
+# ---------------------------------------------------------------------------
+# Sprite hand-off queues
+# ---------------------------------------------------------------------------
+# Staff who fulfil queues. Distributors (and admins) can run /queue next/done.
+DISTRIBUTOR_ROLE_NAME = "Distributor"
+# Max distinct queues one member can be in at once (anti queue-everything).
+MAX_QUEUES_PER_USER = 6
+# The special "general / any sprite" queue id + label.
+QUEUE_GENERAL_ID = "general"
+QUEUE_GENERAL_LABEL = "General (any sprite)"
 
 # ---------------------------------------------------------------------------
 # Flair ladder (auto-assigned by progression). All thresholds tunable.

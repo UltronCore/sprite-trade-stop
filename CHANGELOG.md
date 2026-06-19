@@ -3,6 +3,21 @@
 All notable changes to Sprite Trade Stop. Format: date — what — why.
 This project uses [Semantic Versioning](https://semver.org/).
 
+## [1.6.0] — 2026-06-19
+### Added — sprite hand-off queues
+- **`/queue` command group** (join, leave, mine, list, open, close, next, done,
+  skip, board) — fair FIFO waiting lines for a distributor to give sprites to
+  members one at a time. Replaces the old slow manual queue.
+- **Button UI for ease:** `/queue open` / `/queue board` post a live embed with
+  **Join / Leave** buttons members just click (persistent across restarts via
+  DynamicItems). Closed by default — open only the rare sprites worth queueing.
+- **Distributor role** (resolved by `/setup`) or admins run the queue.
+- **Integration:** `/queue done @user` removes them, **auto-marks the sprite as
+  Have in their synced collection**, and nudges them to vouch the distributor.
+- New `queues` + `open_queues` tables; FIFO ordered by autoincrement id (fixes a
+  same-second tie); +3 queue tests; queue subcommands added to the registration
+  guard. Joining reuses the blacklist/age/tenure gate + a max-queues cap.
+
 ## [1.5.0] — 2026-06-19
 Hardening pass from two external QA reviews (product + security) + a full docs
 revamp for clean handoff.

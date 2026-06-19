@@ -111,6 +111,44 @@ def test_pending_trade_between_either_direction():
     assert db.pending_trade_between(1, 2) is None        # only counts pending
 
 
+def test_queue_open_close():
+    assert not db.is_queue_open("zeropoint_galaxy")
+    db.queue_open("zeropoint_galaxy")
+    assert db.is_queue_open("zeropoint_galaxy")
+    assert "zeropoint_galaxy" in db.open_queue_ids()
+    db.queue_close("zeropoint_galaxy")
+    assert not db.is_queue_open("zeropoint_galaxy")
+
+
+def test_queue_fifo_positions():
+    db.queue_open("king_galaxy")
+    import time
+    assert db.queue_add("king_galaxy", 1) == "added"
+    time.sleep(0.01)
+    assert db.queue_add("king_galaxy", 2) == "added"
+    time.sleep(0.01)
+    db.queue_add("king_galaxy", 3)
+    assert db.queue_add("king_galaxy", 1) == "exists"   # no dup
+    assert db.queue_position("king_galaxy", 1) == 1
+    assert db.queue_position("king_galaxy", 2) == 2
+    assert db.queue_position("king_galaxy", 3) == 3
+    assert db.queue_length("king_galaxy") == 3
+    assert db.queue_head("king_galaxy")["user_id"] == 1
+    # leaving advances the line
+    db.queue_remove("king_galaxy", 1)
+    assert db.queue_head("king_galaxy")["user_id"] == 2
+    assert db.queue_position("king_galaxy", 2) == 1
+    assert db.queue_position("king_galaxy", 1) is None
+
+
+def test_queue_user_entries_and_count():
+    db.queue_add("dream_galaxy", 5)
+    db.queue_add("punk_galaxy", 5)
+    assert db.queue_user_count(5) == 2
+    ids = {r["sprite_id"] for r in db.queue_user_entries(5)}
+    assert ids == {"dream_galaxy", "punk_galaxy"}
+
+
 def test_blacklist():
     db.add_blacklist(5, "scammer")
     assert db.is_blacklisted(5)

@@ -32,6 +32,7 @@ COGS = [
     "spritebot.cogs.scam",
     "spritebot.cogs.collection",
     "spritebot.cogs.collection_sync",
+    "spritebot.cogs.queue",
     "spritebot.cogs.insights",
     "spritebot.cogs.welcome",
     "spritebot.cogs.admin",

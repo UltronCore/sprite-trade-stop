@@ -80,6 +80,8 @@ spritebot/
     collection_sync.py       sync-based /synccollection /mycollection /missing
                              /holders /spriteinfo /spriteset /spriteprivacy
                              /guildprogress /spritematch + build_progress_embed()
+    queue.py                 /queue group (join/leave/mine/list/open/close/next/
+                             done/skip/board) + persistent Join/Leave buttons
     insights.py              /insights (AI-free message counts)
     welcome.py               on_member_join: Newbie flair + welcome embed
     admin.py                 /setup, /digest, /announcenew, /postleaderboard,
@@ -101,6 +103,8 @@ tests/                       pytest: progression, db, share-code, command regist
 | `scam_reports` | reports routed to modlog | reporter_id, target_id, proof, at |
 | `collections` | synced sprite collection (status 1=have, 2=mastered; 0 not stored) | user_id, sprite_id, status |
 | `collection_private` | members opted out of guild-visible features | user_id |
+| `queues` | hand-off waiting lines (FIFO by autoincrement `id`) | id, sprite_id, user_id, joined_at |
+| `open_queues` | which queues currently accept joins (closed by default) | sprite_id, opened_at |
 
 **Everything reputation-related is derived from `vouches`** — there's no cached
 XP. `db.vouch_count()` → `progression.*` → `helpers.apply_progression()` applies
@@ -133,6 +137,22 @@ identical order. `sprites.encode()` is the inverse and round-trips byte-for-byte
 Flow: member edits on the web → **Copy sync code** → `/synccollection <code>` →
 `db.set_collection()`. Pull-based (re-paste to update) — deliberate, so the web
 side stays a free static site with no backend.
+
+## 6b. Hand-off queues (`queue.py`)
+
+A distributor gives a sprite to members one at a time, in a fair FIFO line.
+- `open_queues` controls which queues accept joins (closed by default — open only
+  the rare ones). `queues` is the line, ordered by autoincrement `id` so
+  same-second joins still get correct positions.
+- Members join via `/queue join` **or** by clicking **Join** on a board posted by
+  `/queue open`/`/queue board`. The buttons are **persistent dynamic items**
+  (`QueueJoinButton`/`QueueLeaveButton`, registered in the cog's `setup` via
+  `bot.add_dynamic_items`) so they keep working after a restart — the sprite id is
+  encoded in the button's `custom_id` (`queue:join:<sprite>`).
+- `/queue next` pings the head of the line; `/queue done @user` removes them,
+  **flips that sprite to Have in their synced collection**, and prompts a vouch.
+- Joining reuses `helpers.eligible_to_vouch` (blacklist/age/tenure) and a
+  per-member max-queues cap.
 
 ## 7. Image rendering
 

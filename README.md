@@ -49,6 +49,10 @@ server's existing Discord Onboarding roles instead of duplicating them.
 - `/whohas <sprite> [gold]`, `/whoneeds <sprite>`, `/match` (HAVE ↔ NEED pairing).
 - Auto-maintained `#sprite-list` and `#gold-zp-list`, refreshed on a timer.
 
+**Sprite hand-off queues**
+- A distributor gives a rare sprite to members one at a time, in a fair FIFO line. `/queue open <sprite>` opens a queue (closed by default — open only the ones worth queueing), and posts a live **board with Join/Leave buttons** members just click.
+- `/queue next` pings the person at the front; `/queue done @user` removes them, **auto-marks the sprite as Have in their collection**, and nudges them to vouch. `/queue mine` shows everyone's positions.
+
 **Insights (admin, AI-FREE)**
 - `/insights [messages_per_channel]` scans recent message history (needs Message Content Intent; default 200 msgs/channel, clamped 20–1000) and reports **pure counts**: most-mentioned/most-requested sprites, busiest channels, most active members, open want-posts, top traders. No AI, no paid API.
 
@@ -105,6 +109,8 @@ That's it. For 24/7 hosting (free **Oracle Cloud** or a ~$5/mo VPS), see **[HOST
 | `/spriteinfo <name>` | anyone | Look up a sprite: image, rarity, line, who has it |
 | `/spriteset <name> <status>` | anyone | Quick single-sprite update without the web |
 | `/guildprogress` | anyone | Server-wide completion, most-needed sprites, top collectors |
+| `/queue join \| leave \| mine \| list` | anyone | Wait in line for a sprite hand-off (or click **Join** on a board) |
+| `/queue open \| close \| next \| done \| skip \| board` | distributor | Run a hand-off queue: open it, ping next, mark delivered |
 | `/spriteprivacy <visible>` | anyone | Hide/show your collection in server features |
 | `/digest on\|off\|now` | admin | Weekly low-noise guild sprite digest |
 | `/announcenew` | admin | Announce sprites added since the last baseline |

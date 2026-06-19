@@ -51,6 +51,21 @@ def verified_trader_role(guild: discord.Guild):
     return get_role_by_name(guild, config.VERIFIED_TRADER_ROLE_NAME)
 
 
+def distributor_role(guild: discord.Guild):
+    rid = _role_override("distributor")
+    if rid:
+        return guild.get_role(rid)
+    return get_role_by_name(guild, config.DISTRIBUTOR_ROLE_NAME)
+
+
+def is_distributor(member: discord.Member) -> bool:
+    """Admins OR members holding the Distributor role can fulfil queues."""
+    if is_admin(member):
+        return True
+    role = distributor_role(member.guild)
+    return role is not None and role in member.roles
+
+
 def flair_role(guild: discord.Guild, flair_name: str):
     rid = _role_override(f"flair:{flair_name}")
     if rid:

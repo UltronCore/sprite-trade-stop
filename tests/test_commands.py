@@ -14,7 +14,7 @@ from spritebot import config, db
 os.environ.setdefault("DISCORD_TOKEN", "dummy")
 
 COGS = ["vouch", "trades", "scam", "collection", "collection_sync",
-        "insights", "welcome", "admin"]
+        "queue", "insights", "welcome", "admin"]
 
 EXPECTED = {
     # vouch
@@ -28,6 +28,13 @@ EXPECTED = {
     "spriteset", "spriteprivacy", "guildprogress", "spritematch",
     # insights / admin
     "insights", "setup", "postleaderboard", "digest", "announcenew",
+    # queue group (top-level name)
+    "queue",
+}
+
+# Subcommands under the /queue group (asserted separately).
+EXPECTED_QUEUE_SUBS = {
+    "join", "leave", "mine", "list", "open", "close", "next", "done", "skip", "board",
 }
 
 
@@ -48,17 +55,21 @@ def _load_and_collect():
             await bot.load_extension(f"spritebot.cogs.{c}")
         names = {c.name for c in bot.tree.get_commands()}
         prefix = {c.name for c in bot.commands}
+        qgrp = next((c for c in bot.tree.get_commands() if c.name == "queue"), None)
+        qsubs = {s.name for s in qgrp.commands} if qgrp else set()
         await bot.close()
         db._conn = None
         if os.path.exists(db_path):
             os.remove(db_path)
-        return names, prefix
+        return names, prefix, qsubs
 
     return asyncio.run(run())
 
 
 def test_all_expected_commands_register():
-    names, prefix = _load_and_collect()
+    names, prefix, qsubs = _load_and_collect()
     missing = EXPECTED - names
     assert not missing, f"commands missing from tree: {sorted(missing)}"
     assert "rep" in prefix, "+rep prefix alias missing"
+    missing_q = EXPECTED_QUEUE_SUBS - qsubs
+    assert not missing_q, f"queue subcommands missing: {sorted(missing_q)}"

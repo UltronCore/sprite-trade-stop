@@ -96,6 +96,23 @@ def setup() -> None:
         CREATE TABLE IF NOT EXISTS collection_private (
             user_id INTEGER PRIMARY KEY
         );
+
+        -- Sprite hand-off queues: a member waits in line for a distributor to
+        -- give them a sprite. sprite_id is a released id, or 'general'.
+        -- Ordering is by the autoincrement `id` (true insertion order) so two
+        -- people joining in the same second still get correct FIFO positions.
+        CREATE TABLE IF NOT EXISTS queues (
+            id        INTEGER PRIMARY KEY AUTOINCREMENT,
+            sprite_id TEXT    NOT NULL,
+            user_id   INTEGER NOT NULL,
+            joined_at INTEGER NOT NULL,
+            UNIQUE (sprite_id, user_id)
+        );
+        -- Which queues are currently OPEN for joining (closed by default).
+        CREATE TABLE IF NOT EXISTS open_queues (
+            sprite_id TEXT PRIMARY KEY,
+            opened_at INTEGER NOT NULL
+        );
         """
     )
     c.commit()
@@ -340,6 +357,97 @@ def is_blacklisted(user_id: int) -> bool:
 
 
 # ---- scam reports ---------------------------------------------------------
+# ---- queues ---------------------------------------------------------------
+def queue_open(sprite_id: str) -> None:
+    c = connect()
+    c.execute("INSERT OR IGNORE INTO open_queues(sprite_id,opened_at) VALUES(?,?)",
+              (sprite_id, now()))
+    c.commit()
+
+
+def queue_close(sprite_id: str) -> None:
+    c = connect()
+    c.execute("DELETE FROM open_queues WHERE sprite_id=?", (sprite_id,))
+    c.commit()
+
+
+def is_queue_open(sprite_id: str) -> bool:
+    c = connect()
+    return c.execute("SELECT 1 FROM open_queues WHERE sprite_id=?",
+                     (sprite_id,)).fetchone() is not None
+
+
+def open_queue_ids() -> list:
+    c = connect()
+    return [r["sprite_id"] for r in c.execute(
+        "SELECT sprite_id FROM open_queues ORDER BY opened_at").fetchall()]
+
+
+def queue_add(sprite_id: str, user_id: int) -> str:
+    """Add a member to a queue. Returns 'added' or 'exists'."""
+    c = connect()
+    cur = c.execute(
+        "INSERT OR IGNORE INTO queues(sprite_id,user_id,joined_at) VALUES(?,?,?)",
+        (sprite_id, user_id, now()))
+    c.commit()
+    return "added" if cur.rowcount else "exists"
+
+
+def queue_remove(sprite_id: str, user_id: int) -> bool:
+    c = connect()
+    cur = c.execute("DELETE FROM queues WHERE sprite_id=? AND user_id=?",
+                    (sprite_id, user_id))
+    c.commit()
+    return cur.rowcount > 0
+
+
+def queue_position(sprite_id: str, user_id: int):
+    """1-based position in line, or None if not queued. Ordered by insertion id."""
+    c = connect()
+    row = c.execute("SELECT id FROM queues WHERE sprite_id=? AND user_id=?",
+                    (sprite_id, user_id)).fetchone()
+    if not row:
+        return None
+    ahead = c.execute(
+        "SELECT COUNT(*) n FROM queues WHERE sprite_id=? AND id < ?",
+        (sprite_id, row["id"])).fetchone()["n"]
+    return ahead + 1
+
+
+def queue_list(sprite_id: str, limit: int = 100) -> list:
+    c = connect()
+    return c.execute(
+        "SELECT user_id, joined_at FROM queues WHERE sprite_id=? "
+        "ORDER BY id ASC LIMIT ?", (sprite_id, limit)).fetchall()
+
+
+def queue_length(sprite_id: str) -> int:
+    c = connect()
+    return c.execute("SELECT COUNT(*) n FROM queues WHERE sprite_id=?",
+                     (sprite_id,)).fetchone()["n"]
+
+
+def queue_head(sprite_id: str):
+    """The next member in line (first to join), or None."""
+    c = connect()
+    return c.execute(
+        "SELECT user_id, joined_at FROM queues WHERE sprite_id=? "
+        "ORDER BY id ASC LIMIT 1", (sprite_id,)).fetchone()
+
+
+def queue_user_count(user_id: int) -> int:
+    c = connect()
+    return c.execute("SELECT COUNT(*) n FROM queues WHERE user_id=?",
+                     (user_id,)).fetchone()["n"]
+
+
+def queue_user_entries(user_id: int) -> list:
+    c = connect()
+    return c.execute(
+        "SELECT sprite_id, joined_at FROM queues WHERE user_id=? "
+        "ORDER BY id ASC", (user_id,)).fetchall()
+
+
 def add_scam_report(reporter_id, target_id, proof) -> int:
     c = connect()
     cur = c.execute(

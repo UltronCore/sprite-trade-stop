@@ -22,7 +22,12 @@ bot handles the rest:
    `/missing`, `/spriteset`).
 4. **Trade matchmaking** — the bot knows who has what: `/holders <sprite>`,
    `/spritematch` (who can complete your set), `/guildprogress`, `/spriteinfo`.
-5. **Safety + housekeeping** — `/reportscammer`, `/blacklist`, anti-alt checks,
+5. **Hand-off queues** — for rare sprites, a distributor gives them out one at a
+   time in a fair line. `/queue open <sprite>` posts a board with a **Join**
+   button members click; `/queue next` pings whoever's up; `/queue done @user`
+   delivers it and auto-marks it in their collection. Open only the queues you
+   want — closed by default.
+6. **Safety + housekeeping** — `/reportscammer`, `/blacklist`, anti-alt checks,
    welcome messages, auto-updated holder lists, a daily leaderboard, an optional
    weekly digest (`/digest`), and a "new sprite released" announcement.
 

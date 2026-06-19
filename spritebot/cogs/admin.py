@@ -70,6 +70,12 @@ class Admin(commands.Cog):
         else:
             missing.append(f"role `{config.VERIFIED_TRADER_ROLE_NAME}`")
 
+        # Distributor role (queue staff) — optional.
+        dist = discord.utils.get(guild.roles, name=config.DISTRIBUTOR_ROLE_NAME)
+        if dist:
+            db.set_setting("role:distributor", dist.id)
+            found.append(f"@{dist.name} → distributor")
+
         # Flair roles.
         for name in progression.all_flair_names():
             r = discord.utils.get(guild.roles, name=name)
