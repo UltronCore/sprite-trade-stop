@@ -90,6 +90,9 @@ That's it. For 24/7 hosting (free **Oracle Cloud** or a ~$5/mo VPS), see **[HOST
 | `/leaderboard` | anyone | Top traders by vouches |
 | `/trade @user you_give they_give` | anyone | Two-party confirmed trade |
 | `/whohas` · `/whoneeds` · `/match` | anyone | Collection lookup from roles |
+| `/synccollection <code>` | anyone | Import your collection from the [web tracker](https://ultroncore.github.io/sprite-tracker/) sync code |
+| `/mycollection` · `/missing` | anyone | Bot-rendered collection / wishlist image |
+| `/holders <sprite>` · `/spritematch` | anyone | Find trade partners from synced collections |
 | `/reportscammer @user proof` | anyone | Report to modlog |
 | `/editvouch` · `/removevouch` | admin | Manage vouches |
 | `/blacklist` · `/unblacklist` | admin | Block from the system |

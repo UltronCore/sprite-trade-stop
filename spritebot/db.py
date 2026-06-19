@@ -79,6 +79,16 @@ def setup() -> None:
             proof       TEXT,
             at          INTEGER NOT NULL
         );
+
+        -- Per-member sprite collection, synced from the web tracker's share code.
+        -- status: 0 missing (not stored) | 1 have | 2 mastered
+        CREATE TABLE IF NOT EXISTS collections (
+            user_id   INTEGER NOT NULL,
+            sprite_id TEXT    NOT NULL,
+            status    INTEGER NOT NULL,
+            PRIMARY KEY (user_id, sprite_id)
+        );
+        CREATE INDEX IF NOT EXISTS idx_coll_sprite ON collections(sprite_id, status);
         """
     )
     c.commit()
@@ -308,6 +318,55 @@ def add_scam_report(reporter_id, target_id, proof) -> int:
     )
     c.commit()
     return cur.lastrowid
+
+
+def set_collection(user_id: int, status: dict) -> None:
+    """Replace a member's whole collection with the given {sprite_id: status}.
+    Only non-zero (have/mastered) entries are stored."""
+    c = connect()
+    c.execute("DELETE FROM collections WHERE user_id=?", (user_id,))
+    rows = [(user_id, sid, v) for sid, v in status.items() if v]
+    if rows:
+        c.executemany(
+            "INSERT INTO collections(user_id,sprite_id,status) VALUES(?,?,?)", rows)
+    c.commit()
+
+
+def get_collection(user_id: int) -> dict:
+    c = connect()
+    rows = c.execute(
+        "SELECT sprite_id, status FROM collections WHERE user_id=?",
+        (user_id,)).fetchall()
+    return {r["sprite_id"]: r["status"] for r in rows}
+
+
+def has_collection(user_id: int) -> bool:
+    c = connect()
+    return c.execute("SELECT 1 FROM collections WHERE user_id=? LIMIT 1",
+                     (user_id,)).fetchone() is not None
+
+
+def sprite_holders(sprite_id: int) -> list:
+    """User IDs who have (or mastered) a given sprite, mastered first."""
+    c = connect()
+    return c.execute(
+        "SELECT user_id, status FROM collections WHERE sprite_id=? AND status>=1 "
+        "ORDER BY status DESC", (sprite_id,)).fetchall()
+
+
+def collection_leaderboard(limit: int = 10) -> list:
+    """Members ranked by how many sprites they have (synced collections only)."""
+    c = connect()
+    return c.execute(
+        "SELECT user_id, COUNT(*) n, SUM(CASE WHEN status=2 THEN 1 ELSE 0 END) m "
+        "FROM collections WHERE status>=1 GROUP BY user_id "
+        "ORDER BY n DESC, m DESC LIMIT ?", (limit,)).fetchall()
+
+
+def users_with_collections() -> list:
+    c = connect()
+    return [r["user_id"] for r in c.execute(
+        "SELECT DISTINCT user_id FROM collections").fetchall()]
 
 
 def seconds_since_last_report(reporter_id: int):

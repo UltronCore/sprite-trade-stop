@@ -3,6 +3,21 @@
 All notable changes to Sprite Trade Stop. Format: date — what — why.
 This project uses [Semantic Versioning](https://semver.org/).
 
+## [1.2.0] — 2026-06-19
+### Added — web tracker integration
+- **`/synccollection <code>`** — imports a member's collection from the web
+  tracker's share/sync code (accepts the raw code or a full link). Decoded from
+  a bundled `spritebot/assets/sprites.json` generated from the web app's data,
+  so the sprite order/encoding can never drift between the two.
+- **`/mycollection [@user]`** and **`/missing [@user]`** — the bot now renders
+  the "My Sprites" (green) and "Looking For" (red) images **server-side with
+  Pillow** and posts them directly in Discord (no screenshotting the site).
+- **`/holders <sprite>`** (autocomplete) — who, among synced members, has a
+  sprite — find a trade partner instantly.
+- **`/spritematch`** — ranks members who have the sprites *you're* missing.
+- New `collections` table; Pillow added to requirements; +9 tests (share-code
+  decode parity, round-trip, collection storage/holders/leaderboard).
+
 ## [1.1.0] — 2026-06-19
 ### Added
 - **`/tracker`** command + a welcome-message link to the new web sprite

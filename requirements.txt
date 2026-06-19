@@ -1,6 +1,7 @@
 # Sprite Trade Stop — runtime deps (minimal, free to host)
 discord.py>=2.4,<3.0
 python-dotenv>=1.0
+Pillow>=10.0          # renders the collection / wishlist images posted in Discord
 
 # Dev/test only (installed by CI):
 #   pytest
