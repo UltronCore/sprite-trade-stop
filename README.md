@@ -93,6 +93,9 @@ That's it. For 24/7 hosting (free **Oracle Cloud** or a ~$5/mo VPS), see **[HOST
 | `/synccollection <code>` | anyone | Import your collection from the [web tracker](https://ultroncore.github.io/sprite-tracker/) sync code |
 | `/mycollection` · `/missing` | anyone | Bot-rendered collection / wishlist image |
 | `/holders <sprite>` · `/spritematch` | anyone | Find trade partners from synced collections |
+| `/spriteinfo <name>` | anyone | Look up a sprite: image, rarity, line, who has it |
+| `/spriteset <name> <status>` | anyone | Quick single-sprite update without the web |
+| `/guildprogress` | anyone | Server-wide completion, most-needed sprites, top collectors |
 | `/reportscammer @user proof` | anyone | Report to modlog |
 | `/editvouch` · `/removevouch` | admin | Manage vouches |
 | `/blacklist` · `/unblacklist` | admin | Block from the system |

@@ -120,6 +120,99 @@ class CollectionSync(commands.Cog):
 
     holders.autocomplete("sprite")(_sprite_autocomplete)
 
+    @app_commands.command(description="Look up a sprite: image, rarity, and who has it.")
+    @app_commands.describe(sprite="Sprite name")
+    async def spriteinfo(self, interaction: discord.Interaction, sprite: str):
+        sp = sprites.BY_ID.get(sprite) or next(
+            (s for s in sprites.SPRITES if s["name"].lower() == sprite.lower()), None)
+        if not sp:
+            await interaction.response.send_message("Unknown sprite.", ephemeral=True)
+            return
+        rows = db.sprite_holders(sp["id"])
+        have = len(rows)
+        mastered = sum(1 for r in rows if r["status"] == 2)
+        synced = len(db.users_with_collections())
+        line = sprites.THEME_LABEL.get(sp["theme"], sp["theme"].title())
+        embed = discord.Embed(
+            title=sp["name"],
+            description=(f"**{sp['rarity']}** · {line} line"
+                         + ("  ·  *not in game yet*" if sp.get("unreleased") else "")),
+            color=discord.Color.green() if not sp.get("unreleased") else discord.Color.greyple(),
+        )
+        embed.set_thumbnail(url=f"attachment://{sp['id']}.png")
+        if synced:
+            embed.add_field(name="Server", value=f"{have}/{synced} have · {mastered} mastered")
+            top = []
+            for r in rows[:8]:
+                m = interaction.guild.get_member(r["user_id"])
+                top.append((m.display_name if m else str(r["user_id"]))
+                           + (" 👑" if r["status"] == 2 else ""))
+            if top:
+                embed.add_field(name="Holders", value=", ".join(top), inline=False)
+        else:
+            embed.set_footer(text="Members /synccollection to see who owns this.")
+        file = discord.File(sprites.image_path(sp["id"]), filename=f"{sp['id']}.png")
+        await interaction.response.send_message(embed=embed, file=file)
+
+    spriteinfo.autocomplete("sprite")(_sprite_autocomplete)
+
+    @app_commands.command(description="Set one sprite's status in your collection.")
+    @app_commands.describe(sprite="Sprite name", status="Your status for it")
+    @app_commands.choices(status=[
+        app_commands.Choice(name="Missing", value=0),
+        app_commands.Choice(name="Have", value=1),
+        app_commands.Choice(name="Mastered", value=2),
+    ])
+    async def spriteset(self, interaction: discord.Interaction, sprite: str,
+                        status: app_commands.Choice[int]):
+        sp = sprites.BY_ID.get(sprite) or next(
+            (s for s in sprites.SPRITES if s["name"].lower() == sprite.lower()), None)
+        if not sp:
+            await interaction.response.send_message("Unknown sprite.", ephemeral=True)
+            return
+        db.set_sprite_status(interaction.user.id, sp["id"], status.value)
+        s = sprites.summarize(db.get_collection(interaction.user.id))
+        await interaction.response.send_message(
+            f"Set **{sp['name']}** → {status.name}. You're at "
+            f"**{s['have']}/{s['total']}** ({s['mastered']} mastered).",
+            ephemeral=True)
+
+    spriteset.autocomplete("sprite")(_sprite_autocomplete)
+
+    @app_commands.command(description="Server-wide sprite collection progress.")
+    async def guildprogress(self, interaction: discord.Interaction):
+        synced = db.users_with_collections()
+        if not synced:
+            await interaction.response.send_message(
+                f"No collections synced yet. Members: `/synccollection` with the "
+                f"code from {config.TRACKER_URL}", ephemeral=True)
+            return
+        rel = sprites.released()
+        total = len(rel)
+        lb = db.collection_leaderboard(100)
+        avg = sum(r["n"] for r in lb) / len(lb)
+        completionists = sum(1 for r in lb if r["n"] >= total)
+        counts = db.have_counts()
+        # most-needed = released sprites the fewest members have
+        needed = sorted(rel, key=lambda s: counts.get(s["id"], 0))[:5]
+        need_lines = [f"• **{s['name']}** — {len(synced) - counts.get(s['id'], 0)} still need it"
+                      for s in needed]
+        embed = discord.Embed(
+            title="📊 Server Sprite Progress",
+            color=discord.Color.blurple(),
+            description=(f"**{len(synced)}** members synced · "
+                         f"avg **{avg:.0f}/{total}** collected · "
+                         f"**{completionists}** completed all {total} 🏆"),
+        )
+        embed.add_field(name="Most-needed sprites", value="\n".join(need_lines), inline=False)
+        top = []
+        for i, r in enumerate(lb[:5]):
+            m = interaction.guild.get_member(r["user_id"])
+            top.append(f"{['🥇','🥈','🥉','🏅','🏅'][i]} {m.display_name if m else r['user_id']} "
+                       f"— {r['n']}/{total}")
+        embed.add_field(name="Top collectors", value="\n".join(top), inline=False)
+        await interaction.response.send_message(embed=embed)
+
     @app_commands.command(description="Find members who have sprites you're missing.")
     async def spritematch(self, interaction: discord.Interaction):
         if not db.has_collection(interaction.user.id):

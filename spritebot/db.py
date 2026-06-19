@@ -369,6 +369,29 @@ def users_with_collections() -> list:
         "SELECT DISTINCT user_id FROM collections").fetchall()]
 
 
+def have_counts() -> dict:
+    """sprite_id -> number of synced members who have it (status>=1)."""
+    c = connect()
+    rows = c.execute(
+        "SELECT sprite_id, COUNT(*) n FROM collections WHERE status>=1 "
+        "GROUP BY sprite_id").fetchall()
+    return {r["sprite_id"]: r["n"] for r in rows}
+
+
+def set_sprite_status(user_id: int, sprite_id: str, status: int) -> None:
+    """Set one sprite for a member (status 0 deletes the row)."""
+    c = connect()
+    if status <= 0:
+        c.execute("DELETE FROM collections WHERE user_id=? AND sprite_id=?",
+                  (user_id, sprite_id))
+    else:
+        c.execute(
+            "INSERT INTO collections(user_id,sprite_id,status) VALUES(?,?,?) "
+            "ON CONFLICT(user_id,sprite_id) DO UPDATE SET status=excluded.status",
+            (user_id, sprite_id, status))
+    c.commit()
+
+
 def seconds_since_last_report(reporter_id: int):
     """Seconds since this user's last scam report, or None if they've none."""
     c = connect()

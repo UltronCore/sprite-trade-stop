@@ -85,3 +85,15 @@ def test_set_collection_replaces(fresh_db):
     db.set_collection(1, {"water_basic": 1, "duck_gold": 1})
     db.set_collection(1, {"water_basic": 2})  # replace
     assert db.get_collection(1) == {"water_basic": 2}
+
+
+def test_have_counts_and_single_set(fresh_db):
+    db.set_collection(1, {"water_basic": 1, "duck_gold": 2})
+    db.set_collection(2, {"water_basic": 1})
+    counts = db.have_counts()
+    assert counts["water_basic"] == 2 and counts["duck_gold"] == 1
+    # single-sprite edit
+    db.set_sprite_status(3, "ghost_basic", 2)
+    assert db.get_collection(3) == {"ghost_basic": 2}
+    db.set_sprite_status(3, "ghost_basic", 0)  # 0 removes
+    assert db.get_collection(3) == {}

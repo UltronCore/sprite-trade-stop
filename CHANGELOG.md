@@ -3,6 +3,21 @@
 All notable changes to Sprite Trade Stop. Format: date — what — why.
 This project uses [Semantic Versioning](https://semver.org/).
 
+## [1.3.0] — 2026-06-19
+### Added — lookup + guild coordination
+- **`/spriteinfo <name>`** (autocomplete) — NookLook-style lookup: sprite image,
+  rarity, variant line, and who among synced members has/mastered it.
+- **`/guildprogress`** — server-wide collection stats: members synced, average
+  completion, the **most-needed sprites**, completionist count, and top collectors.
+- **`/spriteset <name> <status>`** — update a single sprite in Discord without
+  opening the web (for "just got Galaxy Duck" moments). +1 db test.
+
+*Scoped deliberately:* skipped the watchlist/polling/digest alert engine and the
+service/adapter rearchitect from the research brief — sprites are a permanent
+catalog with no live API, so a rotating-content alert system would be
+over-engineering. Collection tracking, trade-matching, and image rendering
+already cover the high-value ground.
+
 ## [1.2.0] — 2026-06-19
 ### Added — web tracker integration
 - **`/synccollection <code>`** — imports a member's collection from the web
