@@ -3,6 +3,27 @@
 All notable changes to Sprite Trade Stop. Format: date — what — why.
 This project uses [Semantic Versioning](https://semver.org/).
 
+## [1.4.0] — 2026-06-19
+### Added — privacy + low-noise digest (from the Codex skills audit)
+- **`/spriteprivacy <visible>`** — opt your collection out of guild-visible
+  features (`/holders`, `/spritematch`, leaderboard, digest). Your own commands
+  still work. (Addresses the `discord-collection-schema` skill's "model privacy
+  explicitly" rule now that collections are exposed in guild features.)
+- **`/digest on|off|now`** (admin) — opt-in **weekly** guild sprite digest:
+  members synced, average completion, most-needed sprites, top collectors.
+  Posts to a `#sprite-digest` channel (or the leaderboard channel). This is the
+  `discord-alerts-and-digests` skill's *guild-update* flow — deliberately NOT a
+  change-alert/polling engine, since sprites are a permanent catalog with no API.
+- db: `collection_private` table; all guild-visible queries now exclude private
+  members; shared `build_progress_embed`; +1 privacy test.
+
+### Reviewed (Codex `fortnite-tracker-code-review` skill)
+Audited the bot against the skill's checklist: persistent collection ✅, lookup
+that retains value ✅, guild coordination ✅, canonical catalog + fuzzy search ✅,
+admin settings ✅, tests ✅. The two real gaps it surfaced (privacy, scheduled
+digest) are fixed above. The watchlist/change-alert/dedupe pipeline remains
+intentionally out of scope (no live Sprites API; permanent catalog).
+
 ## [1.3.0] — 2026-06-19
 ### Added — lookup + guild coordination
 - **`/spriteinfo <name>`** (autocomplete) — NookLook-style lookup: sprite image,

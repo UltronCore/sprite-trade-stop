@@ -96,6 +96,8 @@ That's it. For 24/7 hosting (free **Oracle Cloud** or a ~$5/mo VPS), see **[HOST
 | `/spriteinfo <name>` | anyone | Look up a sprite: image, rarity, line, who has it |
 | `/spriteset <name> <status>` | anyone | Quick single-sprite update without the web |
 | `/guildprogress` | anyone | Server-wide completion, most-needed sprites, top collectors |
+| `/spriteprivacy <visible>` | anyone | Hide/show your collection in server features |
+| `/digest on\|off\|now` | admin | Weekly low-noise guild sprite digest |
 | `/reportscammer @user proof` | anyone | Report to modlog |
 | `/editvouch` · `/removevouch` | admin | Manage vouches |
 | `/blacklist` · `/unblacklist` | admin | Block from the system |

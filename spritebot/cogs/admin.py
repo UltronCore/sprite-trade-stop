@@ -12,6 +12,7 @@ from discord.ext import commands, tasks
 
 from .. import config, db, progression, settings
 from .collection import rebuild_lists
+from .collection_sync import build_progress_embed
 
 
 class Admin(commands.Cog):
@@ -19,10 +20,12 @@ class Admin(commands.Cog):
         self.bot = bot
         self.periodic_refresh.start()
         self.daily_leaderboard.start()
+        self.weekly_digest.start()
 
     def cog_unload(self):
         self.periodic_refresh.cancel()
         self.daily_leaderboard.cancel()
+        self.weekly_digest.cancel()
 
     # ---- /setup ---------------------------------------------------------
     @app_commands.command(
@@ -138,6 +141,67 @@ class Admin(commands.Cog):
     @daily_leaderboard.before_loop
     async def before_leaderboard(self):
         await self.bot.wait_until_ready()
+
+    # ---- weekly guild sprite digest (opt-in, low-noise) -----------------
+    @tasks.loop(hours=config.DIGEST_INTERVAL_HOURS)
+    async def weekly_digest(self):
+        for guild in self.bot.guilds:
+            try:
+                if db.get_setting(f"digest_enabled:{guild.id}") != "1":
+                    continue
+                await post_digest(guild)
+            except Exception as e:  # noqa: BLE001 - never kill the loop
+                print(f"[digest] {guild.id}: {e}")
+
+    @weekly_digest.before_loop
+    async def before_digest(self):
+        await self.bot.wait_until_ready()
+
+    @app_commands.command(description="(Admin) Weekly sprite digest: on / off / now.")
+    @app_commands.describe(action="Enable, disable, or post immediately")
+    @app_commands.choices(action=[
+        app_commands.Choice(name="on", value="on"),
+        app_commands.Choice(name="off", value="off"),
+        app_commands.Choice(name="now", value="now"),
+    ])
+    async def digest(self, interaction: discord.Interaction,
+                     action: app_commands.Choice[str]):
+        if not settings.is_admin(interaction.user):
+            await interaction.response.send_message("Admins only.", ephemeral=True)
+            return
+        gid = interaction.guild.id
+        if action.value == "on":
+            db.set_setting(f"digest_enabled:{gid}", "1")
+            ch = settings.get_channel(interaction.guild, "digest") \
+                or settings.get_channel(interaction.guild, "leaderboard")
+            where = ch.mention if ch else "the leaderboard channel (set a #sprite-digest channel + /setup)"
+            await interaction.response.send_message(
+                f"✅ Weekly sprite digest **enabled** → posts to {where}.", ephemeral=True)
+        elif action.value == "off":
+            db.set_setting(f"digest_enabled:{gid}", "0")
+            await interaction.response.send_message(
+                "Weekly digest **disabled**.", ephemeral=True)
+        else:  # now
+            await interaction.response.defer(ephemeral=True)
+            posted = await post_digest(interaction.guild)
+            await interaction.followup.send(
+                "Digest posted." if posted else
+                "Nobody's synced a collection yet, or no digest/leaderboard "
+                "channel is configured.", ephemeral=True)
+
+
+async def post_digest(guild) -> bool:
+    """Post the weekly guild sprite digest. Returns True if it actually posted."""
+    ch = settings.get_channel(guild, "digest") \
+        or settings.get_channel(guild, "leaderboard")
+    if not ch:
+        return False
+    embed = build_progress_embed(guild, title="📰 Weekly Sprite Digest")
+    if embed is None:
+        return False
+    embed.set_footer(text="Sync with /synccollection · turn this off with /digest off")
+    await ch.send(embed=embed)
+    return True
 
 
 async def post_leaderboard(bot, guild):

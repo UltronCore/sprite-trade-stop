@@ -47,6 +47,7 @@ CHANNELS = {
     "sprite_list": "sprite-list",       # auto-maintained holders list
     "gold_zp_list": "gold-zp-list",     # auto-maintained Gold Zero Point list
     "welcome": "welcome",               # welcome messages on join
+    "digest": "sprite-digest",          # optional weekly guild digest channel
 }
 
 # ---------------------------------------------------------------------------
@@ -113,6 +114,9 @@ COMMAND_PREFIX = "+"       # enables the  +rep @user  vouch alias
 TRACKER_URL = "https://ultroncore.github.io/sprite-tracker/"
 LIST_REFRESH_MINUTES = 30  # how often the auto-maintained sprite lists refresh
                            # (the daily leaderboard is a separate 24h loop)
+DIGEST_INTERVAL_HOURS = 168  # weekly guild sprite digest (opt-in, low-noise).
+                             # Posts to the #sprite-digest channel if /setup found
+                             # one, else the leaderboard channel. Off until enabled.
 NO_VBUCKS_RULE = (
     "💰 **Server rule:** Sprites are traded for sprites only — **never** sold "
     "for V-Bucks or real money."

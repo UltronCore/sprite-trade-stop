@@ -87,6 +87,24 @@ def test_set_collection_replaces(fresh_db):
     assert db.get_collection(1) == {"water_basic": 2}
 
 
+def test_privacy_excludes_from_guild_features(fresh_db):
+    db.set_collection(1, {"water_basic": 2, "duck_gold": 1})
+    db.set_collection(2, {"water_basic": 1})
+    # user 2 goes private
+    db.set_collection_private(2, True)
+    assert db.is_collection_private(2)
+    # excluded from holders, leaderboard, users list, have_counts
+    assert {r["user_id"] for r in db.sprite_holders("water_basic")} == {1}
+    assert {r["user_id"] for r in db.collection_leaderboard()} == {1}
+    assert db.users_with_collections() == [1]
+    assert db.have_counts()["water_basic"] == 1
+    # their own data still intact
+    assert db.get_collection(2) == {"water_basic": 1}
+    # toggling back restores visibility
+    db.set_collection_private(2, False)
+    assert {r["user_id"] for r in db.sprite_holders("water_basic")} == {1, 2}
+
+
 def test_have_counts_and_single_set(fresh_db):
     db.set_collection(1, {"water_basic": 1, "duck_gold": 2})
     db.set_collection(2, {"water_basic": 1})

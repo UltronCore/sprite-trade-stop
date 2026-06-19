@@ -89,6 +89,13 @@ def setup() -> None:
             PRIMARY KEY (user_id, sprite_id)
         );
         CREATE INDEX IF NOT EXISTS idx_coll_sprite ON collections(sprite_id, status);
+
+        -- Members who opted their collection OUT of guild-visible features
+        -- (holders / spritematch / leaderboard / digest). Their own commands
+        -- still work; they're just invisible to others.
+        CREATE TABLE IF NOT EXISTS collection_private (
+            user_id INTEGER PRIMARY KEY
+        );
         """
     )
     c.commit()
@@ -346,35 +353,57 @@ def has_collection(user_id: int) -> bool:
                      (user_id,)).fetchone() is not None
 
 
+# Exclude opted-out members from every guild-visible aggregate/listing.
+_NOT_PRIVATE = "user_id NOT IN (SELECT user_id FROM collection_private)"
+
+
+def set_collection_private(user_id: int, private: bool) -> None:
+    c = connect()
+    if private:
+        c.execute("INSERT OR IGNORE INTO collection_private(user_id) VALUES(?)",
+                  (user_id,))
+    else:
+        c.execute("DELETE FROM collection_private WHERE user_id=?", (user_id,))
+    c.commit()
+
+
+def is_collection_private(user_id: int) -> bool:
+    c = connect()
+    return c.execute("SELECT 1 FROM collection_private WHERE user_id=?",
+                     (user_id,)).fetchone() is not None
+
+
 def sprite_holders(sprite_id: int) -> list:
-    """User IDs who have (or mastered) a given sprite, mastered first."""
+    """User IDs who have (or mastered) a given sprite, mastered first.
+    Excludes members who set their collection private."""
     c = connect()
     return c.execute(
-        "SELECT user_id, status FROM collections WHERE sprite_id=? AND status>=1 "
-        "ORDER BY status DESC", (sprite_id,)).fetchall()
+        f"SELECT user_id, status FROM collections WHERE sprite_id=? AND status>=1 "
+        f"AND {_NOT_PRIVATE} ORDER BY status DESC", (sprite_id,)).fetchall()
 
 
 def collection_leaderboard(limit: int = 10) -> list:
-    """Members ranked by how many sprites they have (synced collections only)."""
+    """Members ranked by how many sprites they have (non-private only)."""
     c = connect()
     return c.execute(
-        "SELECT user_id, COUNT(*) n, SUM(CASE WHEN status=2 THEN 1 ELSE 0 END) m "
-        "FROM collections WHERE status>=1 GROUP BY user_id "
-        "ORDER BY n DESC, m DESC LIMIT ?", (limit,)).fetchall()
+        f"SELECT user_id, COUNT(*) n, SUM(CASE WHEN status=2 THEN 1 ELSE 0 END) m "
+        f"FROM collections WHERE status>=1 AND {_NOT_PRIVATE} GROUP BY user_id "
+        f"ORDER BY n DESC, m DESC LIMIT ?", (limit,)).fetchall()
 
 
 def users_with_collections() -> list:
+    """Non-private members who have synced a collection."""
     c = connect()
     return [r["user_id"] for r in c.execute(
-        "SELECT DISTINCT user_id FROM collections").fetchall()]
+        f"SELECT DISTINCT user_id FROM collections WHERE {_NOT_PRIVATE}").fetchall()]
 
 
 def have_counts() -> dict:
-    """sprite_id -> number of synced members who have it (status>=1)."""
+    """sprite_id -> number of (non-private) members who have it (status>=1)."""
     c = connect()
     rows = c.execute(
-        "SELECT sprite_id, COUNT(*) n FROM collections WHERE status>=1 "
-        "GROUP BY sprite_id").fetchall()
+        f"SELECT sprite_id, COUNT(*) n FROM collections WHERE status>=1 "
+        f"AND {_NOT_PRIVATE} GROUP BY sprite_id").fetchall()
     return {r["sprite_id"]: r["n"] for r in rows}
 
 
