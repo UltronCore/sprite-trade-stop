@@ -11,6 +11,8 @@ A custom, open-source Discord bot for **Sprite Trade Stop**, a Fortnite sprite
 **free to run** (no paid AI APIs), beginner-friendly, and to work *with* the
 server's existing Discord Onboarding roles instead of duplicating them.
 
+> **Server owner?** Send them the visual walkthrough → **https://ultroncore.github.io/sprite-tracker/pitch/** (or the text version, [OWNER-GUIDE.md](OWNER-GUIDE.md)).
+>
 > **New here (owner or a future maintainer)?** This README gets you running.
 > For the full "what it does and how it works" — every subsystem, the data
 > model, and how to extend it — read **[ARCHITECTURE.md](ARCHITECTURE.md)**.
