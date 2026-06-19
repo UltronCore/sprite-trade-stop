@@ -3,6 +3,13 @@
 All notable changes to Sprite Trade Stop. Format: date — what — why.
 This project uses [Semantic Versioning](https://semver.org/).
 
+## [1.1.0] — 2026-06-19
+### Added
+- **`/tracker`** command + a welcome-message link to the new web sprite
+  collection tracker (https://ultroncore.github.io/sprite-tracker/) — members
+  mark Have/Missing/Mastered, filter by Normal/Gold/Gummy/Galaxy, and export a
+  shareable trade image. `TRACKER_URL` is configurable in `config.py`.
+
 ## [1.0.1] — 2026-06-08
 Hardening pass from a full QA review (correctness + security + docs). No breaking
 changes to commands or config defaults; adds two tunable knobs.

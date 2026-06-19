@@ -107,6 +107,10 @@ SCAM_REPORT_COOLDOWN_SECONDS = 60  # min seconds between a user's scam reports
 # ---------------------------------------------------------------------------
 DB_PATH = "sprite_trade_stop.db"
 COMMAND_PREFIX = "+"       # enables the  +rep @user  vouch alias
+
+# Web collection tracker (mark Have/Missing/Mastered, filter by line, export
+# shareable trade images). Surfaced via /tracker and the welcome message.
+TRACKER_URL = "https://ultroncore.github.io/sprite-tracker/"
 LIST_REFRESH_MINUTES = 30  # how often the auto-maintained sprite lists refresh
                            # (the daily leaderboard is a separate 24h loop)
 NO_VBUCKS_RULE = (

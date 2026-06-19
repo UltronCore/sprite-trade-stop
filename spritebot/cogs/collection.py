@@ -113,6 +113,21 @@ class Collection(commands.Cog):
         embed.set_footer(text=f"{len(haves)} holders · {len(needs)} seekers")
         await interaction.followup.send(embed=embed)
 
+    @app_commands.command(description="Open the web sprite collection tracker.")
+    async def tracker(self, interaction: discord.Interaction):
+        embed = discord.Embed(
+            title="🎮 Sprites Collection Tracker",
+            description=(
+                f"Track every sprite — mark **Have / Missing / Mastered**, filter "
+                f"by **Normal / Gold / Gummy / Galaxy**, and export a shareable "
+                f"image of your collection or wishlist to post in the trade "
+                f"channels.\n\n**[Open the tracker]({config.TRACKER_URL})**"
+            ),
+            color=discord.Color.green(),
+        )
+        embed.set_footer(text="No login — your collection saves in your browser + share link.")
+        await interaction.response.send_message(embed=embed)
+
     @app_commands.command(description="(Admin) Rebuild the auto sprite lists now.")
     async def refreshlists(self, interaction: discord.Interaction):
         if not settings.is_admin(interaction.user):

@@ -41,7 +41,10 @@ class Welcome(commands.Cog):
                 "**Confirm** so nobody gets scammed.\n"
                 "**4. Build trust:** after a good trade, `/vouch` each other "
                 "(or `+rep @user`). Vouches raise your flair: "
-                "Newbie → Trader → Verified Trader → Veteran → Max Helper.\n\n"
+                "Newbie → Trader → Verified Trader → Veteran → Max Helper.\n"
+                f"**5. Track your collection:** `/tracker` or "
+                f"[open it here]({config.TRACKER_URL}) — mark what you have/need "
+                "and export a trade image.\n\n"
                 f"{config.NO_VBUCKS_RULE}\n"
                 "See a scammer? `/reportscammer`."
             ),
