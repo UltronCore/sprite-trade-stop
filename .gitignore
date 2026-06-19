@@ -13,3 +13,7 @@ __pycache__/
 venv/
 .pytest_cache/
 .ruff_cache/
+
+# Python build artifacts
+*.egg-info/
+__pycache__/
