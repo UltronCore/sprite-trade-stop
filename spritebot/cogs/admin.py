@@ -76,6 +76,20 @@ class Admin(commands.Cog):
             db.set_setting("role:distributor", dist.id)
             found.append(f"@{dist.name} → distributor")
 
+        # Sprite-news ping role — optional.
+        if config.NEWS_PING_ROLE_NAME:
+            npr = discord.utils.get(guild.roles, name=config.NEWS_PING_ROLE_NAME)
+            if npr:
+                db.set_setting("role:news_ping", npr.id)
+                found.append(f"@{npr.name} → news_ping")
+
+        # Collector milestone roles (auto-assigned from collections) — optional.
+        for spec in config.COLLECTOR_ROLES:
+            r = discord.utils.get(guild.roles, name=spec["role"])
+            if r:
+                db.set_setting(f"role:collector:{spec['role']}", r.id)
+                found.append(f"@{r.name} → collector")
+
         # Flair roles.
         for name in progression.all_flair_names():
             r = discord.utils.get(guild.roles, name=name)
@@ -256,6 +270,13 @@ async def post_new_sprites(guild, new_ids) -> bool:
           or settings.get_channel(guild, "leaderboard"))
     if not ch:
         return False
+    ping = ""
+    if config.NEWS_PING_ROLE_NAME:
+        rid = db.get_setting("role:news_ping")
+        role = guild.get_role(int(rid)) if rid else \
+            settings.get_role_by_name(guild, config.NEWS_PING_ROLE_NAME)
+        if role:
+            ping = role.mention
     items = [sprites.BY_ID[i] for i in new_ids if i in sprites.BY_ID]
     items.sort(key=lambda s: s["name"])
     lines = [f"• **{s['name']}** ({s['rarity']})" for s in items[:25]]
@@ -266,12 +287,13 @@ async def post_new_sprites(guild, new_ids) -> bool:
     embed.set_footer(text="Update your collection with /synccollection or /spriteset")
     # Show the first new sprite's art if we have it.
     first = items[0]["id"] if items else None
+    mentions = discord.AllowedMentions(roles=True) if ping else discord.AllowedMentions.none()
     if first and sprites.image_path(first).exists():
         file = discord.File(sprites.image_path(first), filename=f"{first}.png")
         embed.set_thumbnail(url=f"attachment://{first}.png")
-        await ch.send(embed=embed, file=file)
+        await ch.send(content=ping or None, embed=embed, file=file, allowed_mentions=mentions)
     else:
-        await ch.send(embed=embed)
+        await ch.send(content=ping or None, embed=embed, allowed_mentions=mentions)
     return True
 
 

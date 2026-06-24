@@ -49,6 +49,9 @@ server's existing Discord Onboarding roles instead of duplicating them.
 - `/whohas <sprite> [gold]`, `/whoneeds <sprite>`, `/match` (HAVE ↔ NEED pairing).
 - Auto-maintained `#sprite-list` and `#gold-zp-list`, refreshed on a timer.
 
+**Auto-assigned collector roles** 🏅
+- The bot grants milestone roles **automatically** from synced collections — All Gold, Galaxy/Gummy/Mythic/Epic Sprite Collector, Mastered Em' All, 15 Sprites Mastered, Peanut Collector, Superior Sprite Collector — the same roles the server gives by hand. Re-checked on every sync, `/spriteset`, queue hand-off, or `/collectorroles`. Edit `config.COLLECTOR_ROLES` to match your exact role names.
+
 **One-click control panel (no typing needed)**
 - `/panel` posts a pinned hub of buttons: **My Collection**, **Find Trades**, **My Queues**, **Join a Queue** (dropdown of open queues), **Sync** (paste your code in a pop-up form), and **Open Tracker**. Members click instead of remembering slash commands. Buttons persist across restarts; replies are private (ephemeral) so channels stay clean.
 
@@ -114,6 +117,7 @@ That's it. For 24/7 hosting (free **Oracle Cloud** or a ~$5/mo VPS), see **[HOST
 | `/guildprogress` | anyone | Server-wide completion, most-needed sprites, top collectors |
 | `/queue join \| leave \| mine \| list` | anyone | Wait in line for a sprite hand-off (or click **Join** on a board) |
 | `/queue open \| close \| next \| done \| skip \| board` | distributor | Run a hand-off queue: open it, ping next, mark delivered |
+| `/collectorroles` | anyone | Re-check & apply your collector milestone roles |
 | `/spriteprivacy <visible>` | anyone | Hide/show your collection in server features |
 | `/digest on\|off\|now` | admin | Weekly low-noise guild sprite digest |
 | `/announcenew` | admin | Announce sprites added since the last baseline |

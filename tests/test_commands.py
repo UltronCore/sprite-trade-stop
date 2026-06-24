@@ -25,7 +25,7 @@ EXPECTED = {
     "whohas", "whoneeds", "match", "refreshlists", "tracker",
     # collection sync
     "synccollection", "mycollection", "missing", "holders", "spriteinfo",
-    "spriteset", "spriteprivacy", "guildprogress", "spritematch",
+    "spriteset", "spriteprivacy", "guildprogress", "spritematch", "collectorroles",
     # insights / admin
     "insights", "setup", "postleaderboard", "digest", "announcenew",
     # queue group (top-level name)

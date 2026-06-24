@@ -19,7 +19,7 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
-from .. import config, db, render, sprites
+from .. import collector, config, db, render, sprites
 
 
 def _released_choices():
@@ -55,10 +55,13 @@ class CollectionSync(commands.Cog):
                 "**Copy sync code** and paste it here.", ephemeral=True)
             return
         db.set_collection(interaction.user.id, status)
+        roles = await collector.apply_collector_roles(interaction.user)
         s = sprites.summarize(status)
+        earned = [n for n, ok in roles.items() if ok]
+        extra = (f"\n🏅 Collector roles: {', '.join(earned)}" if earned else "")
         await interaction.response.send_message(
             f"✅ Synced! You have **{s['have']}/{s['total']}** sprites "
-            f"({s['mastered']} mastered). Try `/mycollection` or `/missing`.",
+            f"({s['mastered']} mastered). Try `/mycollection` or `/missing`.{extra}",
             ephemeral=True)
 
     @app_commands.command(description="Post your collection image (synced from the tracker).")
@@ -176,11 +179,30 @@ class CollectionSync(commands.Cog):
             await interaction.response.send_message("Unknown sprite.", ephemeral=True)
             return
         db.set_sprite_status(interaction.user.id, sp["id"], status.value)
+        await collector.apply_collector_roles(interaction.user)
         s = sprites.summarize(db.get_collection(interaction.user.id))
         await interaction.response.send_message(
             f"Set **{sp['name']}** → {status.name}. You're at "
             f"**{s['have']}/{s['total']}** ({s['mastered']} mastered).",
             ephemeral=True)
+
+    @app_commands.command(description="Re-check and apply your collector milestone roles.")
+    @app_commands.checks.cooldown(2, 30.0)
+    async def collectorroles(self, interaction: discord.Interaction):
+        if not db.has_collection(interaction.user.id):
+            await interaction.response.send_message(
+                "Sync your collection first with `/synccollection`.", ephemeral=True)
+            return
+        await interaction.response.defer(ephemeral=True)
+        roles = await collector.apply_collector_roles(interaction.user)
+        earned = [n for n, ok in roles.items() if ok]
+        if not config.COLLECTOR_ROLES:
+            msg = "Collector roles are turned off on this server."
+        elif earned:
+            msg = "🏅 Your collector roles: " + ", ".join(earned)
+        else:
+            msg = "No collector milestones yet — keep collecting! Check `/missing`."
+        await interaction.followup.send(msg, ephemeral=True)
 
     spriteset.autocomplete("sprite")(_sprite_autocomplete)
 

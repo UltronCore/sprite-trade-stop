@@ -22,7 +22,7 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
-from .. import config, db, helpers, settings, sprites
+from .. import collector, config, db, helpers, settings, sprites
 
 
 def _label(sprite_id: str) -> str:
@@ -295,6 +295,7 @@ class Queue(commands.Cog):
         if sid != config.QUEUE_GENERAL_ID and db.has_collection(member.id):
             if db.get_collection(member.id).get(sid, 0) < 1:
                 db.set_sprite_status(member.id, sid, sprites.HAVE)
+                await collector.apply_collector_roles(member)
                 note = " (marked in their collection ✅)"
         await interaction.response.send_message(
             f"✅ Delivered **{_label(sid)}** to {member.mention}{note}. "

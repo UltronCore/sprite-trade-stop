@@ -48,15 +48,36 @@ or **point the bot at it** (edit `config.CHANNELS` then `/setup`).
 - [ ] In the Developer Portal: **Server Members Intent** + **Message Content Intent** are ON (can't verify from the server side — check the portal)
 - [ ] `config.GUILD_ID` is set to this server's ID (the bot refuses other guilds)
 
-## 4. The server's OWN vouch bot (overlap decision) ⚠️
+## 4. The server's OWN vouch bot (overlap — DECIDED) ⚠️
 
-The server now runs its own vouch/sprite bot. Decide how to avoid two bots doing
-the same thing:
+Confirmed: the server runs **"Sprite" (FNSprite Discord Custom Bot)** with
+`/vouch` (star rating), `/vouches`, `/manage vouch`. It auto-assigns
+**verified-trader at 3 vouches** and another role at **15**.
 
-- [ ] Identify the other bot and list its commands (does it do vouches? trades? leaderboard?)
-- [ ] If it **covers vouches**, set `config.DISABLED_COGS = ["vouch", "scam"]` so this bot runs only the **collection / queue / panel / events** side (which the other bot doesn't do). Keep `trades` if the other bot has no two-party confirm flow.
-- [ ] Confirm no command-name collisions (e.g. both have `/vouch` or `+rep`) — if they collide, disable mine for that feature
-- [ ] Tell members which bot to use for what (pin it / put in `#roles-info`)
+- [x] **Set `config.DISABLED_COGS = ["vouch", "scam"]`** — their bot owns vouching,
+  and `#report` tickets own scam reports. This bot then runs only the
+  **collection / queue / panel / events / collector-roles** side, which their bot
+  does NOT do. (Decide on `trades`: their flow is manual via `trade-portal-*`
+  channels — keep my `/trade` only if you want a two-party-confirm option;
+  otherwise add it to DISABLED_COGS too.)
+- [ ] Verify no command collision: their bot has `/vouch`/`/vouches`; with the cogs
+  disabled, mine no longer registers those. ✓
+- [ ] Pin "which bot does what" in `#roles-info` (Sprite bot = vouches/trust;
+  this bot = collection tracking, queues, panel, collector roles).
+
+## 4b. Collector roles (the big integration win) 🏅
+
+The server hands out collector roles **by hand** (All Gold, Galaxy/Gummy/Mythic/
+Epic Sprite Collector, Mastered Em' All, 15 Sprites Mastered, Peanut Collector,
+Superior Sprite Collector). **This bot auto-assigns them from synced collections.**
+
+- [ ] Confirm the EXACT role names match `config.COLLECTOR_ROLES` (edit the `role`
+  fields to match yours, e.g. emojis in the name). `/setup` binds them by name.
+- [ ] Make sure the **bot's role sits above** all collector roles (so it can assign them)
+- [ ] Test: `/synccollection` a code with all Gold → bot grants "All Gold"; remove
+  one → bot revokes it. `/collectorroles` re-checks on demand.
+- [ ] Decide if the bot should be the source of truth for these (turn off manual
+  assignment) or run alongside (it only adds/removes the roles it manages)
 
 ## 5. Smoke-test each feature (after setup)
 

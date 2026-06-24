@@ -3,6 +3,31 @@
 All notable changes to Sprite Trade Stop. Format: date — what — why.
 This project uses [Semantic Versioning](https://semver.org/).
 
+## [1.9.0] — 2026-06-24
+### Added — server integration (after reviewing the live server)
+- **Auto-assigned collector roles** (the marquee integration): the bot grants/
+  removes milestone roles from synced collections — All Gold, Galaxy/Gummy/Mythic/
+  Epic Sprite Collector, Mastered Em' All, 15 Sprites Mastered, Peanut Collector,
+  Superior Sprite Collector — matching the roles the server hands out manually.
+  Re-applied on sync, `/spriteset`, panel sync, and queue hand-off; `/collectorroles`
+  re-checks on demand. Pure rule logic in `collector.py` (+5 tests). `/setup` binds
+  the role IDs.
+- **`config.DISABLED_COGS`** documented for this server: their **"Sprite" (FNSprite)
+  bot owns vouching** (`/vouch`/`/vouches`/`/manage vouch`, verified at 3 vouches),
+  so set `["vouch","scam"]` to avoid overlap and run only the collection/queue/
+  panel/events/collector side.
+- **Sprite-news ping role** — `/announcenew` pings `config.NEWS_PING_ROLE_NAME` on
+  new-sprite drops (community-requested).
+
+### Docs
+- **`suggestions/`** — a response file for every `#suggestions` post (news ping,
+  pro-traders gating, ticket drops, customs, jr-mods, memes) with verdict + what
+  the bot does.
+- **TRACKING-AT-SCALE.md** — measured: the bot's SQLite tracks **5,000 players**
+  with sub-100ms queries; a separate web backend is unnecessary infra. ("naw.")
+- **SERVER-CHECK.md** updated with the confirmed vouch-bot overlap + collector-role
+  binding steps.
+
 ## [1.8.0] — 2026-06-24
 ### Added — new sprites, weekly events, feature toggles (research pass)
 - **6 upcoming characters** added (unreleased): Striker, Fishy, Aura, Boss, Grim

@@ -68,6 +68,8 @@ spritebot/
   settings.py                resolve channel/role IDs (DB override > config); is_admin
   helpers.py                 apply_progression(), eligibility (age/tenure/blacklist),
                              rate-limit, role stripping
+  collector.py               auto-assign collector milestone roles from a
+                             collection (All Gold / Galaxy Collector / Mastered…)
   render.py                  Pillow renderer for collection/wishlist images
   assets/
     sprites.json             catalog generated from the web app's data.js

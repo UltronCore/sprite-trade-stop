@@ -19,7 +19,7 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
-from .. import config, db, render, settings, sprites
+from .. import collector, config, db, render, settings, sprites
 from .collection_sync import find_matches
 from .queue import _do_join, _label
 
@@ -40,6 +40,7 @@ class SyncModal(discord.ui.Modal, title="Sync your collection"):
                 f"and paste it here. {config.TRACKER_URL}", ephemeral=True)
             return
         db.set_collection(interaction.user.id, status)
+        await collector.apply_collector_roles(interaction.user)
         s = sprites.summarize(status)
         await interaction.response.send_message(
             f"✅ Synced! You have **{s['have']}/{s['total']}** sprites "

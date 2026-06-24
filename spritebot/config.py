@@ -118,6 +118,31 @@ MAX_VOUCHES_PER_DAY = 10   # max vouches one member can GIVE per 24h (anti-farmi
 # Repeat vouches between the SAME pair are allowed, but only once per this
 # window — so regular trading partners keep building trust without ring-farming.
 VOUCH_PAIR_COOLDOWN_HOURS = 24
+
+# ---------------------------------------------------------------------------
+# Collector roles — AUTO-ASSIGNED from a member's synced collection.
+# Maps to the milestone roles the Sprite Trade Stop server already hands out by
+# hand. Edit `role` to your EXACT Discord role name; /setup binds it by name.
+# Set COLLECTOR_ROLES = [] to turn the whole feature off.
+# Rules (evaluated over RELEASED sprites only):
+#   all_theme  + theme   → has every sprite of that variant line (have or mastered)
+#   all_rarity + rarity  → has every sprite of that rarity
+#   has        + id      → has a specific sprite
+#   all_have             → has every released sprite (full collection)
+#   all_mastered         → has mastered every released sprite
+#   mastered_count + n   → has mastered at least n sprites
+# ---------------------------------------------------------------------------
+COLLECTOR_ROLES = [
+    {"role": "All Gold",                "rule": "all_theme",  "theme": "gold"},
+    {"role": "Galaxy Sprite Collector", "rule": "all_theme",  "theme": "galaxy"},
+    {"role": "Gummy Sprite Collector",  "rule": "all_theme",  "theme": "candy"},
+    {"role": "Mythic Sprite Collector", "rule": "all_rarity", "rarity": "Mythic"},
+    {"role": "Epic Sprite Collector",   "rule": "all_rarity", "rarity": "Epic"},
+    {"role": "Peanut Collector",        "rule": "has",        "id": "theburntpeanut_basic"},
+    {"role": "Superior Sprite Collector", "rule": "all_have"},
+    {"role": "Mastered Em' All",        "rule": "all_mastered"},
+    {"role": "15 Sprites Mastered",     "rule": "mastered_count", "n": 15},
+]
 SCAM_REPORT_COOLDOWN_SECONDS = 60  # min seconds between a user's scam reports
 TRADE_COOLDOWN_SECONDS = 30        # min seconds between opening trades (anti-spam)
 
@@ -159,7 +184,14 @@ WEEKLY_EVENTS = [
 
 # Web collection tracker (mark Have/Missing/Mastered, filter by line, export
 # shareable trade images). Surfaced via /tracker and the welcome message.
+# NOTE: the server officially uses Rickventure's tracker
+# (https://staticvacant.github.io/fnsprites/) — the bot decodes its share codes
+# identically, so point members there if you prefer it over this fork.
 TRACKER_URL = "https://ultroncore.github.io/sprite-tracker/"
+
+# Optional role to ping when new sprites are announced (community-requested
+# "Sprite News" ping). Leave "" to ping no one. Bound by /setup if it exists.
+NEWS_PING_ROLE_NAME = ""
 LIST_REFRESH_MINUTES = 30  # how often the auto-maintained sprite lists refresh
                            # (the daily leaderboard is a separate 24h loop)
 DIGEST_INTERVAL_HOURS = 168  # weekly guild sprite digest (opt-in, low-noise).
