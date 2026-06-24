@@ -1,112 +1,107 @@
-# Server Inspection Checklist — Sprite Trade Stop
+# Server Inspection — READ-ONLY pass
 
-What to verify inside the Discord before/while deploying the bot. Grounded in the
-channels/roles observed in the server as of 2026-06-24. Work top to bottom; most
-issues are "a channel/role name doesn't match what the bot expects" — fixable by
-renaming, creating, or just running `/setup`.
+> 🔒 **This pass is VIEW & SEARCH ONLY.** When given computer access I will
+> **only browse and read** the server — no posting messages, no running slash
+> commands, no changing settings. Anything that needs a command *run* or a
+> message *sent* is listed in §7 for a human to do.
 
-> **Run `/setup` first** — it auto-binds whatever it can find by name and tells
-> you exactly what's missing. This checklist is for the gaps it can't fix alone.
+Goal: confirm the server is ready for the bot, grounded in what was observed as
+of 2026-06-24. Each item says exactly **what I look at** (read-only) and the
+expected result. I'll fill in a verdict per item and report back.
 
 ---
 
-## 1. Channel name reconciliation (most important)
+## 1. Channels exist & names match config (view the channel list)
 
-The bot looks for channels by the names in `config.CHANNELS`. The server's real
-channels differ in places — decide per row: **rename the channel**, **create it**,
-or **point the bot at it** (edit `config.CHANNELS` then `/setup`).
+The bot finds channels by the names in `config.CHANNELS`. I'll **view the channel
+list** and check each. Mismatches are fixed later by renaming, creating, or
+editing config + running `/setup` (a human step).
 
-| Bot expects (`config`) | Seen in server | Action |
+| Bot expects (`config`) | Seen 2026-06-24 | What I'll verify (view only) |
 |---|---|---|
-| `trade-portal` | **trade-portal-1**, trade-portal-2, galaxy-sprite-trade-portal | Set config `trade_portal` → `trade-portal-1` (or rename) |
-| `vouch-trades` | **vouch-trades** ✓ | OK |
-| `news` | **news** ✓ | OK |
-| `welcome` | **welcome** ✓ | OK |
-| `sprite-queue` | **galaxy-sprite-queue-system** | Set config `queue` → that name, or make a `#sprite-queue` |
-| `modlog` | *(not seen)* | Create a private `#modlog` for scam reports |
-| `leaderboard` | *(not seen)* | Create one, or it falls back gracefully |
-| `sprite-list` / `gold-zp-list` | *(not seen)* | Create if you want the auto holder lists |
-| `sprite-digest` | *(not seen)* | Optional — only if you turn on `/digest on` |
+| `trade-portal` | trade-portal-1/2/3, galaxy-sprite-trade-portal | Which exact name to point config at |
+| `vouch-trades` | vouch-trades ✓ | Exists |
+| `news` | news ✓ | Exists |
+| `welcome` | welcome ✓ | Exists |
+| `sprite-queue` | galaxy-sprite-queue-system | Confirm name / whether a `#sprite-queue` exists |
+| `modlog` `leaderboard` `sprite-list` `gold-zp-list` `sprite-digest` | not seen | Note which are missing |
+| `news ping` target | — | Is there a sprite-news ping role/channel (suggestion #1)? |
 
-- [ ] Decided each channel above (rename / create / config)
-- [ ] `show-collection` exists ✓ — point `/mycollection` users there
-- [ ] Re-ran `/setup` after any change; "Found" list looks complete, "Missing" is acceptable
+- [ ] Listed which channels exist vs. missing vs. name-mismatched
+- [ ] Read the `#rules-and-faq` / `#roles-info` pins for how trading/vouching is described
 
-## 2. Roles
+## 2. Roles exist & hierarchy (view Server Settings → Roles)
 
-- [ ] **7 sprite roles + Gold variants** exist (Zero Point, Dream, Punk, King, Ghost, Demon, Duck — base + "(Gold)") and are assigned via **Onboarding** (verify a test member can pick them)
-- [ ] **verified-trader** role exists ✓ (seen)
-- [ ] **Distributor** role exists (for queue staff) — create if missing; `/setup` binds it
-- [ ] **Flair roles** exist if you want the ladder: Newbie / Trader / Verified Trader / Veteran / Max Helper (or set `config.FLAIR_TIERS` to your real names)
-- [ ] **Owner / Admin** roles exist and are bound by `/setup` (so admin auth uses IDs, not names)
-- [ ] Confirm new upcoming sprites — do you want roles for Striker/Fishy/Aura/Boss/Grim Reaper/John Wick when they drop **June 25**? (the web tracker handles them with no roles needed)
+I'll **view the role list and its order** (read-only):
 
-## 3. Bot placement & permissions
+- [ ] **Sprite roles + Gold** (Zero Point, Dream, Punk, King, Ghost, Demon, Duck — base + "(Gold)") exist and are onboarding-assignable
+- [ ] **verified-trader**, **Distributor / Sprite Distributors**, **Owner/Admin** roles exist
+- [ ] **Collector roles** exist and match `config.COLLECTOR_ROLES` names exactly:
+  All Gold, Galaxy/Gummy/Mythic/Epic Sprite Collector, Mastered Em' All,
+  15 Sprites Mastered, Peanut Collector, Superior Sprite Collector
+  *(seen on the Sprite bot's role list — I'll confirm exact spelling/emoji)*
+- [ ] **Role order:** note where the (future) bot role would need to sit — it must
+  be **above** all sprite/Gold/flair/verified/collector roles to assign them
 
-- [ ] The **bot's role is ABOVE** every sprite/Gold/flair/verified/Distributor role (Server Settings → Roles) — else role assignment silently fails
-- [ ] Bot has: **Manage Roles, Send Messages, Embed Links, Attach Files, Read Message History, Add Reactions**
-- [ ] In the Developer Portal: **Server Members Intent** + **Message Content Intent** are ON (can't verify from the server side — check the portal)
-- [ ] `config.GUILD_ID` is set to this server's ID (the bot refuses other guilds)
+## 3. Permissions & intents (view only / portal note)
 
-## 4. The server's OWN vouch bot (overlap — DECIDED) ⚠️
+- [ ] In Server Settings, note whether a role for this bot would have Manage Roles
+- [ ] **Cannot verify from the server side:** the two Privileged Intents (Members,
+  Message Content) live in the Developer Portal → flagged in §7 for a human
 
-Confirmed: the server runs **"Sprite" (FNSprite Discord Custom Bot)** with
-`/vouch` (star rating), `/vouches`, `/manage vouch`. It auto-assigns
-**verified-trader at 3 vouches** and another role at **15**.
+## 4. The other bot — "Sprite" (view its profile, read-only) ⚠️ DECIDED
 
-- [x] **Set `config.DISABLED_COGS = ["vouch", "scam"]`** — their bot owns vouching,
-  and `#report` tickets own scam reports. This bot then runs only the
-  **collection / queue / panel / events / collector-roles** side, which their bot
-  does NOT do. (Decide on `trades`: their flow is manual via `trade-portal-*`
-  channels — keep my `/trade` only if you want a two-party-confirm option;
-  otherwise add it to DISABLED_COGS too.)
-- [ ] Verify no command collision: their bot has `/vouch`/`/vouches`; with the cogs
-  disabled, mine no longer registers those. ✓
-- [ ] Pin "which bot does what" in `#roles-info` (Sprite bot = vouches/trust;
-  this bot = collection tracking, queues, panel, collector roles).
+Confirmed by viewing its profile: **Sprite (FNSprite Custom Bot)** — `/vouch`
+(star rating), `/vouches`, `/manage vouch`; auto-assigns verified-trader at 3
+vouches and another role at 15. It also holds the collector roles list.
 
-## 4b. Collector roles (the big integration win) 🏅
+- [x] **Decision:** set `config.DISABLED_COGS = ["vouch", "scam"]` so this bot does
+  NOT duplicate vouching or scam-reports (their `#report` tickets own that).
+- [ ] I'll **read** its slash-command list (view-only) to confirm no other overlap
+- [ ] Confirm: this bot should own **collection tracking, queues, sessions, panel,
+  collector roles, events** — which Sprite does not do
 
-The server hands out collector roles **by hand** (All Gold, Galaxy/Gummy/Mythic/
-Epic Sprite Collector, Mastered Em' All, 15 Sprites Mastered, Peanut Collector,
-Superior Sprite Collector). **This bot auto-assigns them from synced collections.**
+## 5. Collector-role readiness (the big integration win) — view only
 
-- [ ] Confirm the EXACT role names match `config.COLLECTOR_ROLES` (edit the `role`
-  fields to match yours, e.g. emojis in the name). `/setup` binds them by name.
-- [ ] Make sure the **bot's role sits above** all collector roles (so it can assign them)
-- [ ] Test: `/synccollection` a code with all Gold → bot grants "All Gold"; remove
-  one → bot revokes it. `/collectorroles` re-checks on demand.
-- [ ] Decide if the bot should be the source of truth for these (turn off manual
-  assignment) or run alongside (it only adds/removes the roles it manages)
+The server hands out collector roles **by hand**; this bot auto-assigns them.
+Read-only checks:
 
-## 5. Smoke-test each feature (after setup)
+- [ ] Compare the EXACT role names on the Sprite bot's profile vs.
+  `config.COLLECTOR_ROLES` and note any spelling/emoji differences to fix in config
+- [ ] Confirm a `#pro-traders`-style channel exists or note it's needed for the
+  new **"Almost Complete"** role (suggestion #2)
 
-- [ ] `/panel` → posts the control panel; pin it. Click every button: My Collection, Find Trades, My Queues, Join a Queue, Sync (modal), Open Tracker
-- [ ] `/synccollection <code>` with a real code from the tracker → "Synced! X/41"
-- [ ] `/mycollection` and `/missing` → images render
-- [ ] `/queue open zeropoint_galaxy` → board posts with Join/Leave buttons; click Join; `/queue next`; `/queue done @you` (check it marked the sprite in your collection)
-- [ ] `/spriteinfo`, `/holders`, `/spritematch`, `/guildprogress`
-- [ ] `/events` → shows the weekly schedule, highlights today
-- [ ] `/tracker` link works; welcome message fires on a test join
-- [ ] If trust cogs enabled: `/vouch`, `+rep`, `/trade`, `/leaderboard`, `/reportscammer`
+## 6. Suggestions cross-check (read `#suggestions`, view-only)
 
-## 6. New-sprite readiness (June 25 "Gone Wild" drop)
-
-- [ ] When Striker/Fishy/Aura/Boss/Grim Reaper go live, flip them to `unreleased: false` in the tracker `data.js`, regenerate `sprites.json` (see MAINTAINERS), restart the bot → it auto-announces them in `#news`
-- [ ] Same for **John Wick** when it lands (date TBD)
-- [ ] Confirm `#news` is the channel the announcement should post to (config `news` ✓)
-
-## 7. Housekeeping observations to confirm
-
-- [ ] Is the **old manual queue** (`galaxy-sprite-queue-system`, `queue-system-faq`) being retired in favor of `/queue`? If so, archive those channels or repurpose one as the bot's queue channel
-- [ ] `community-sprites`, `collect-your-sprites` channels — any overlap with bot features? (these look like other-bot/manual systems)
-- [ ] Boost level (33 boosts seen) → sticker/emoji slots if you also use the emoji-studio skill
+For each post in `#suggestions`, I'll confirm the bot's response in
+[suggestions/](suggestions/) still matches reality:
+- [ ] #1 Sprite-news ping → role/channel present? (bot supports it)
+- [ ] #2 Pro-traders gate → channel present for the Almost-Complete role?
+- [ ] #3 Ticket drops → is the old `galaxy-sprite-queue-system` still in use? (`/queue` replaces it)
+- [ ] #4 Customs → `#custom-games` + Customs role present? (`/session` covers it)
+- [ ] #5 Jr-mod roles / #6 meme channel → server tasks, just note status
 
 ---
 
-### Quick verdict template (fill in during inspection)
-- Channels matched/created: ___ / needs work: ___
-- Roles OK: ___ / missing: ___
-- Bot role above sprite roles: Y / N
-- Other vouch bot overlap → DISABLED_COGS = ___
-- Commands smoke-tested OK: ___ / broken: ___
+## 7. ⚠️ Needs a HUMAN (not part of my read-only pass)
+
+These require **running a command or sending a message** — I will NOT do them.
+Listed so you (or a mod) can do them, ideally in a private/test channel:
+
+- [ ] Run **`/setup`** (binds channels/roles) — then read its "Found/Missing" report
+- [ ] Enable the 2 Privileged Intents in the Developer Portal
+- [ ] Move the bot's role **above** the sprite/collector roles
+- [ ] Smoke-test by running: `/panel` (click each button), `/synccollection <code>`,
+  `/mycollection`, `/queue open …` → Join → `/queue done`, `/session open` → Join →
+  `/session teams`, `/grid`, `/events`, `/collectorroles`, `/spritematch`
+- [ ] Confirm a collector role flips correctly (sync all-Gold → "All Gold" granted)
+
+---
+
+### Verdict template (I fill this in after the read-only pass)
+- Channels: exist ___ / missing ___ / name-mismatch ___
+- Roles: exist ___ / missing ___ / name differences to fix in config: ___
+- Bot role position (where it must sit): ___
+- Other-bot overlap → DISABLED_COGS = ___
+- Suggestions still accurate? ___
+- Human to-do handed off: ___
