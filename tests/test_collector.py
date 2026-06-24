@@ -51,3 +51,12 @@ def test_mastered_milestones():
 
 def test_empty_collection_earns_nothing():
     assert collector.earned_roles({}) == set()
+
+
+def test_text_grid_renders():
+    from spritebot.cogs.collection_sync import build_text_grid
+    status = {s["id"]: HAVE for s in sprites.released() if s["theme"] == "basic"}
+    grid = build_text_grid(status)
+    assert "NORMAL" in grid and "GUMMY" in grid and "GALAXY" in grid
+    assert "Water" in grid and "Burnt Peanut" in grid
+    assert "✅" in grid and "❌" in grid and "collected" in grid

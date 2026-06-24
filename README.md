@@ -118,6 +118,8 @@ That's it. For 24/7 hosting (free **Oracle Cloud** or a ~$5/mo VPS), see **[HOST
 | `/queue join \| leave \| mine \| list` | anyone | Wait in line for a sprite hand-off (or click **Join** on a board) |
 | `/queue open \| close \| next \| done \| skip \| board` | distributor | Run a hand-off queue: open it, ping next, mark delivered |
 | `/collectorroles` | anyone | Re-check & apply your collector milestone roles |
+| `/grid` | anyone | Post your collection as a text grid (for trade channels) |
+| `/session open\|list\|teams\|close` | anyone | Host a custom game / hunt; auto-split teams |
 | `/spriteprivacy <visible>` | anyone | Hide/show your collection in server features |
 | `/digest on\|off\|now` | admin | Weekly low-noise guild sprite digest |
 | `/announcenew` | admin | Announce sprites added since the last baseline |

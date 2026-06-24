@@ -149,6 +149,27 @@ def test_queue_user_entries_and_count():
     assert ids == {"dream_galaxy", "punk_galaxy"}
 
 
+def test_session_join_slots_and_leave():
+    sid = db.create_session(host_id=1, kind="Custom Game", title="Trios", slots=2)
+    assert db.session_join(sid, 1) == "joined"
+    assert db.session_join(sid, 1) == "exists"
+    assert db.session_join(sid, 2) == "joined"
+    assert db.session_join(sid, 3) == "full"        # slot cap respected
+    assert db.session_member_count(sid) == 2
+    assert db.session_leave(sid, 1) is True
+    assert db.session_join(sid, 3) == "joined"       # spot freed
+    db.close_session(sid)
+    assert db.session_join(sid, 4) == "closed"
+    assert db.get_session(sid)["status"] == "closed"
+
+
+def test_session_unlimited_slots():
+    sid = db.create_session(host_id=1, kind="Sprite Hunting", title="", slots=0)
+    for u in range(1, 30):
+        assert db.session_join(sid, u) == "joined"
+    assert db.session_member_count(sid) == 29
+
+
 def test_blacklist():
     db.add_blacklist(5, "scammer")
     assert db.is_blacklisted(5)

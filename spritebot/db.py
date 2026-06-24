@@ -113,6 +113,25 @@ def setup() -> None:
             sprite_id TEXT PRIMARY KEY,
             opened_at INTEGER NOT NULL
         );
+
+        -- Sessions: a host opens a custom game / sprite hunt / dust farm and
+        -- members join via a button up to an optional slot limit.
+        CREATE TABLE IF NOT EXISTS sessions (
+            id         INTEGER PRIMARY KEY AUTOINCREMENT,
+            host_id    INTEGER NOT NULL,
+            kind       TEXT    NOT NULL,
+            title      TEXT,
+            slots      INTEGER NOT NULL DEFAULT 0,   -- 0 = unlimited
+            status     TEXT    NOT NULL DEFAULT 'open',  -- open | closed
+            message_id INTEGER,
+            created_at INTEGER NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS session_members (
+            session_id INTEGER NOT NULL,
+            user_id    INTEGER NOT NULL,
+            joined_at  INTEGER NOT NULL,
+            PRIMARY KEY (session_id, user_id)
+        );
         """
     )
     c.commit()
@@ -446,6 +465,85 @@ def queue_user_entries(user_id: int) -> list:
     return c.execute(
         "SELECT sprite_id, joined_at FROM queues WHERE user_id=? "
         "ORDER BY id ASC", (user_id,)).fetchall()
+
+
+# ---- sessions (custom games / hunts) --------------------------------------
+def create_session(host_id: int, kind: str, title: str, slots: int) -> int:
+    c = connect()
+    cur = c.execute(
+        "INSERT INTO sessions(host_id,kind,title,slots,created_at) VALUES(?,?,?,?,?)",
+        (host_id, kind, title, slots, now()))
+    c.commit()
+    return cur.lastrowid
+
+
+def get_session(sid: int):
+    c = connect()
+    return c.execute("SELECT * FROM sessions WHERE id=?", (sid,)).fetchone()
+
+
+def get_session_by_message(message_id: int):
+    c = connect()
+    return c.execute("SELECT * FROM sessions WHERE message_id=?",
+                     (message_id,)).fetchone()
+
+
+def set_session_message(sid: int, message_id: int) -> None:
+    c = connect()
+    c.execute("UPDATE sessions SET message_id=? WHERE id=?", (message_id, sid))
+    c.commit()
+
+
+def close_session(sid: int) -> None:
+    c = connect()
+    c.execute("UPDATE sessions SET status='closed' WHERE id=?", (sid,))
+    c.commit()
+
+
+def open_sessions() -> list:
+    c = connect()
+    return c.execute("SELECT * FROM sessions WHERE status='open' "
+                     "ORDER BY id DESC").fetchall()
+
+
+def session_join(sid: int, user_id: int) -> str:
+    """Add a member if room. Returns 'joined' | 'exists' | 'full' | 'closed'."""
+    c = connect()
+    sess = c.execute("SELECT * FROM sessions WHERE id=?", (sid,)).fetchone()
+    if not sess or sess["status"] != "open":
+        return "closed"
+    if c.execute("SELECT 1 FROM session_members WHERE session_id=? AND user_id=?",
+                 (sid, user_id)).fetchone():
+        return "exists"
+    if sess["slots"]:
+        n = c.execute("SELECT COUNT(*) n FROM session_members WHERE session_id=?",
+                      (sid,)).fetchone()["n"]
+        if n >= sess["slots"]:
+            return "full"
+    c.execute("INSERT INTO session_members(session_id,user_id,joined_at) VALUES(?,?,?)",
+              (sid, user_id, now()))
+    c.commit()
+    return "joined"
+
+
+def session_leave(sid: int, user_id: int) -> bool:
+    c = connect()
+    cur = c.execute("DELETE FROM session_members WHERE session_id=? AND user_id=?",
+                    (sid, user_id))
+    c.commit()
+    return cur.rowcount > 0
+
+
+def session_members(sid: int) -> list:
+    c = connect()
+    return c.execute("SELECT user_id FROM session_members WHERE session_id=? "
+                     "ORDER BY joined_at ASC", (sid,)).fetchall()
+
+
+def session_member_count(sid: int) -> int:
+    c = connect()
+    return c.execute("SELECT COUNT(*) n FROM session_members WHERE session_id=?",
+                     (sid,)).fetchone()["n"]
 
 
 def add_scam_report(reporter_id, target_id, proof) -> int:

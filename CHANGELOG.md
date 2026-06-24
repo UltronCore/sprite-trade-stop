@@ -3,6 +3,24 @@
 All notable changes to Sprite Trade Stop. Format: date — what — why.
 This project uses [Semantic Versioning](https://semver.org/).
 
+## [1.10.0] — 2026-06-24
+### Added — sessions (custom games), text grid, pro-trader role
+- **`/session` group** (open / list / teams / close) — host a custom game,
+  sprite hunt, or dust-farm lobby; members **Join via button** up to an optional
+  slot limit; **`/session teams`** randomly splits the roster into teams for the
+  "Sprite Royale" customs. Persistent buttons survive restarts. (Community
+  suggestion #4, built.)
+- **`/grid`** — posts your collection as the `NORMAL|GOLD|GUMMY|GALAXY ✅/❌`
+  text grid members currently type by hand in the trade channels.
+- **"Almost Complete" collector role** (`missing_at_most` rule) — auto-role for
+  members missing ≤3 sprites, to gate a `#pro-traders` channel (suggestion #2).
+- **`suggestions/`** folder: every `#suggestions` post logged with a specific
+  bot response + status, plus **FEASIBILITY-5k-tracking.md** (a 5,000-user load
+  test — every query <70 ms; the bot's SQLite is the central tracker, no web
+  backend needed).
+- New `sessions` + `session_members` tables; +6 tests (collector grid, session
+  flow); session subcommands added to the registration guard.
+
 ## [1.9.0] — 2026-06-24
 ### Added — server integration (after reviewing the live server)
 - **Auto-assigned collector roles** (the marquee integration): the bot grants/

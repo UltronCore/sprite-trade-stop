@@ -4,21 +4,19 @@
 teams of 10 (or 9 with Burnt Peanut); winner gets a "Winner of the Sprite War"
 title. (The server has a **Customs** role + `#custom-games`.)
 
-**Verdict:** 🟡 Feasible — designed; build on request.
+**Verdict:** ✅ **Built** — the `/session` system.
 
-## Response (design)
-A lightweight `/customs` flow, reusing the queue/session pattern already in the
-bot:
-- `/customs open <name> <slots>` (Customs host/staff) → posts an embed with a
-  **Join** button and a live roster, like the queue board.
-- Members click Join until slots fill; team auto-split (e.g. two teams of 10).
-- `/customs win <team>` → posts the result; optionally grants a temporary
-  "Sprite War Winner" role to that team (auto-removed next event).
-- Closeable; logged.
-
-This is ~1 small cog (mirrors `queue.py`). I didn't build it this turn to keep
-the change focused on the high-value collector-role integration — **say "build
-customs" and I'll add it** with the same button UX.
+## Response (shipped)
+Built as a generic **session** system (custom games, sprite hunts, dust farming),
+with the queue cog's button UX:
+- **`/session open <kind> [title] [slots]`** — host opens it (auto-joined) and
+  posts an embed with **Join / Leave** buttons + a live roster. `kind` includes
+  *Custom Game*; `slots:20` caps it (0 = unlimited).
+- Members click **Join** until full (buttons persist across restarts).
+- **`/session teams <id> <count>`** — host/admin randomly splits the roster into
+  N teams for the "sprite war".
+- **`/session list`** / **`/session close <id>`** to manage it.
 
 **Server side:** the `Customs` role + `#custom-games` already exist, so it slots
-straight in.
+straight in. (A temporary "Sprite War Winner" role via a `/session win` is an
+easy follow-up — say the word.)

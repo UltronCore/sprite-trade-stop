@@ -142,6 +142,10 @@ COLLECTOR_ROLES = [
     {"role": "Superior Sprite Collector", "rule": "all_have"},
     {"role": "Mastered Em' All",        "rule": "all_mastered"},
     {"role": "15 Sprites Mastered",     "rule": "mastered_count", "n": 15},
+    # Optional "pro traders" gate (Goose's suggestion): auto-role for members
+    # missing ≤3 sprites. Rename/remove to taste; /setup only binds it if the
+    # role exists. Gate a #pro-traders channel by this role.
+    {"role": "Almost Complete",         "rule": "missing_at_most", "n": 3},
 ]
 SCAM_REPORT_COOLDOWN_SECONDS = 60  # min seconds between a user's scam reports
 TRADE_COOLDOWN_SECONDS = 30        # min seconds between opening trades (anti-spam)

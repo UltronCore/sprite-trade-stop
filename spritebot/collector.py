@@ -36,6 +36,10 @@ def _rule_met(rule: dict, status: dict) -> bool:
         return all(s["id"] in mastered for s in rel)
     if kind == "mastered_count":
         return len(mastered) >= rule["n"]
+    if kind == "missing_at_most":
+        # "Almost complete" — e.g. for a gated pro-traders channel.
+        missing = sum(1 for s in rel if s["id"] not in have)
+        return missing <= rule["n"]
     return False
 
 

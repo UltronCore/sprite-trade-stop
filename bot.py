@@ -33,6 +33,7 @@ COGS = [
     "spritebot.cogs.collection",
     "spritebot.cogs.collection_sync",
     "spritebot.cogs.queue",
+    "spritebot.cogs.sessions",
     "spritebot.cogs.hub",
     "spritebot.cogs.events",
     "spritebot.cogs.insights",

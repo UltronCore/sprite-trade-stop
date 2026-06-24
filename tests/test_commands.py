@@ -14,7 +14,7 @@ from spritebot import config, db
 os.environ.setdefault("DISCORD_TOKEN", "dummy")
 
 COGS = ["vouch", "trades", "scam", "collection", "collection_sync",
-        "queue", "hub", "events", "insights", "welcome", "admin"]
+        "queue", "sessions", "hub", "events", "insights", "welcome", "admin"]
 
 EXPECTED = {
     # vouch
@@ -26,10 +26,11 @@ EXPECTED = {
     # collection sync
     "synccollection", "mycollection", "missing", "holders", "spriteinfo",
     "spriteset", "spriteprivacy", "guildprogress", "spritematch", "collectorroles",
+    "grid",
     # insights / admin
     "insights", "setup", "postleaderboard", "digest", "announcenew",
-    # queue group (top-level name)
-    "queue",
+    # queue / session groups (top-level names)
+    "queue", "session",
     # hub / events
     "panel", "events",
 }
@@ -38,6 +39,7 @@ EXPECTED = {
 EXPECTED_QUEUE_SUBS = {
     "join", "leave", "mine", "list", "open", "close", "next", "done", "skip", "board",
 }
+EXPECTED_SESSION_SUBS = {"open", "list", "teams", "close"}
 
 
 def _load_and_collect():
@@ -57,21 +59,25 @@ def _load_and_collect():
             await bot.load_extension(f"spritebot.cogs.{c}")
         names = {c.name for c in bot.tree.get_commands()}
         prefix = {c.name for c in bot.commands}
-        qgrp = next((c for c in bot.tree.get_commands() if c.name == "queue"), None)
-        qsubs = {s.name for s in qgrp.commands} if qgrp else set()
+        def subs(name):
+            g = next((c for c in bot.tree.get_commands() if c.name == name), None)
+            return {s.name for s in g.commands} if g else set()
+        qsubs, ssubs = subs("queue"), subs("session")
         await bot.close()
         db._conn = None
         if os.path.exists(db_path):
             os.remove(db_path)
-        return names, prefix, qsubs
+        return names, prefix, qsubs, ssubs
 
     return asyncio.run(run())
 
 
 def test_all_expected_commands_register():
-    names, prefix, qsubs = _load_and_collect()
+    names, prefix, qsubs, ssubs = _load_and_collect()
     missing = EXPECTED - names
     assert not missing, f"commands missing from tree: {sorted(missing)}"
     assert "rep" in prefix, "+rep prefix alias missing"
-    missing_q = EXPECTED_QUEUE_SUBS - qsubs
-    assert not missing_q, f"queue subcommands missing: {sorted(missing_q)}"
+    assert not (EXPECTED_QUEUE_SUBS - qsubs), \
+        f"queue subcommands missing: {sorted(EXPECTED_QUEUE_SUBS - qsubs)}"
+    assert not (EXPECTED_SESSION_SUBS - ssubs), \
+        f"session subcommands missing: {sorted(EXPECTED_SESSION_SUBS - ssubs)}"

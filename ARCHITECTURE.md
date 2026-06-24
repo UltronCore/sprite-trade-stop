@@ -84,6 +84,10 @@ spritebot/
                              /guildprogress /spritematch + build_progress_embed()
     queue.py                 /queue group (join/leave/mine/list/open/close/next/
                              done/skip/board) + persistent Join/Leave buttons
+    sessions.py              /session group: host custom games / hunts, members
+                             Join via button, /session teams splits the roster
+  collector.py               auto-assign milestone roles (All Gold, Galaxy/Gummy/
+                             Mythic/Epic Collector, Mastered, Almost Complete…)
     hub.py                   /panel control panel: persistent button hub + sync
                              modal + join-queue dropdown (click instead of type)
     events.py                /events weekly Sprite events (Mon/Thu/Sat cadence)

@@ -206,6 +206,22 @@ class CollectionSync(commands.Cog):
 
     spriteset.autocomplete("sprite")(_sprite_autocomplete)
 
+    @app_commands.command(
+        description="Post your collection as a text grid (for the trade channels).")
+    @app_commands.describe(user="Whose grid (defaults to you)")
+    @app_commands.checks.cooldown(2, 20.0)
+    async def grid(self, interaction: discord.Interaction, user: discord.Member = None):
+        target = user or interaction.user
+        if not db.has_collection(target.id):
+            who = "You haven't" if target == interaction.user else f"{target.display_name} hasn't"
+            await interaction.response.send_message(
+                f"{who} synced a collection yet. Use `/synccollection` "
+                f"({config.TRACKER_URL}).", ephemeral=True)
+            return
+        grid_text = build_text_grid(db.get_collection(target.id))
+        await interaction.response.send_message(
+            f"**{target.display_name}**'s sprites:\n{grid_text}")
+
     @app_commands.command(description="Hide/show your collection in server features.")
     @app_commands.describe(visible="Show your collection in /holders, /spritematch, leaderboard?")
     async def spriteprivacy(self, interaction: discord.Interaction, visible: bool):
@@ -253,6 +269,33 @@ class CollectionSync(commands.Cog):
             description="\n".join(lines), color=discord.Color.blurple())
         embed.set_footer(text="Counts how many of YOUR missing sprites each member has.")
         await interaction.followup.send(embed=embed, ephemeral=True)
+
+
+def build_text_grid(status: dict) -> str:
+    """The NORMAL|GOLD|GUMMY|GALAXY ✅/❌ grid players post by hand, generated."""
+    themes = [("basic", "NORMAL"), ("gold", "GOLD"), ("candy", "GUMMY"), ("galaxy", "GALAXY")]
+    # released characters in roster order
+    chars = []
+    for s in sprites.released():
+        if s["character"] not in chars:
+            chars.append(s["character"])
+    rel_by = {(s["character"], s["theme"]): s["id"] for s in sprites.released()}
+    width = max(len(c) for c in chars)
+    rows = ["```", "      | NORMAL | GOLD | GUMMY | GALAXY", "✅ Owned   ❌ Missing",
+            "-" * 40]
+    for ch in chars:
+        cells = []
+        for theme, _ in themes:
+            sid = rel_by.get((ch, theme))
+            if sid is None:
+                continue  # e.g. Burnt Peanut has only NORMAL
+            cells.append("✅" if status.get(sid, 0) >= 1 else "❌")
+        rows.append(f"{ch.ljust(width)} | " + " | ".join(cells))
+    s = sprites.summarize(status)
+    rows.append("")
+    rows.append(f"{s['have']}/{s['total']} collected · {s['mastered']} mastered")
+    rows.append("```")
+    return "\n".join(rows)
 
 
 def find_matches(user_id: int, limit: int = 10) -> list:
