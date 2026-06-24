@@ -3,6 +3,31 @@
 All notable changes to Sprite Trade Stop. Format: date — what — why.
 This project uses [Semantic Versioning](https://semver.org/).
 
+## [1.8.0] — 2026-06-24
+### Added — new sprites, weekly events, feature toggles (research pass)
+- **6 upcoming characters** added (unreleased): Striker, Fishy, Aura, Boss, Grim
+  Reaper (+ Galaxy), John Wick — the June 25 "Gone Wild" drop + Wick (TBD). Plus
+  Drifter/Ice/Seven (datamine). Released total stays **41** until they go live;
+  flip `unreleased:false` on launch day and the bot auto-announces. Manifest +
+  images updated in both repos (64 entries now).
+- **`/events`** — weekly Sprite events (Mastery Monday / New Sprite Thursday /
+  Saturday Power Hour). "Community Days" is community shorthand for these — named
+  honestly (verified against Epic's support docs; it is not an official term).
+- **`config.DISABLED_COGS`** — disable any cog (e.g. `["vouch","scam"]`) so the
+  bot doesn't overlap the server's own vouch bot; runs only collection/queue/
+  panel/events.
+
+### Fixed
+- **Share-code validation is now roster-growth-safe.** Adding sprites grew the
+  expected length and would have rejected every existing 54-sprite code (incl.
+  ones the live web app emits). `decode` now accepts any code long enough to
+  cover the released roster, up to the full size (pads new sprites as missing),
+  while still rejecting garbage. Backward + forward compatible.
+
+### Added (docs)
+- **SERVER-CHECK.md** — a concrete in-Discord inspection checklist (channel/role
+  name reconciliation, bot role position, the other-vouch-bot overlap decision).
+
 ## [1.7.0] — 2026-06-19
 ### Added — one-click control panel (Discord UX, researched)
 - **`/panel`** posts a persistent pinned **hub of buttons** so members click

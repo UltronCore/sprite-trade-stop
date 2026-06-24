@@ -6,9 +6,13 @@ from spritebot import config, db, sprites
 
 
 def test_manifest_loaded():
-    assert len(sprites.SHARE_ORDER) == 54
+    # Roster grows as upcoming sprites are appended; released stays 41 until they
+    # go live. The first id is fixed (share-code order anchor).
+    assert len(sprites.SHARE_ORDER) >= 54
     assert len(sprites.released()) == 41
     assert sprites.SHARE_ORDER[0] == "water_basic"
+    # New upcoming characters are present but unreleased.
+    assert "wick_basic" in sprites.BY_ID and sprites.BY_ID["wick_basic"]["unreleased"]
 
 
 def test_decode_known_web_code():

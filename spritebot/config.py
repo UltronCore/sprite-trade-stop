@@ -131,6 +131,32 @@ INSIGHTS_EXCLUDED_CHANNELS = ["mod-chat", "staff", "admin", "logs", "modlog"]
 DB_PATH = "sprite_trade_stop.db"
 COMMAND_PREFIX = "+"       # enables the  +rep @user  vouch alias
 
+# ---------------------------------------------------------------------------
+# Feature toggles
+# ---------------------------------------------------------------------------
+# Cog modules to NOT load. Use this if another bot already covers a feature —
+# e.g. if the server runs its OWN vouch bot, set:
+#     DISABLED_COGS = ["vouch", "scam"]
+# to run only the collection / queue / panel / events side and avoid overlap.
+# (Leave empty to run everything.)
+DISABLED_COGS = []
+
+# ---------------------------------------------------------------------------
+# Weekly Sprite events (Epic-confirmed cadence; some call them "community days").
+# Times are US Eastern (ET). Surfaced by /events. Edit if Epic changes them.
+# ---------------------------------------------------------------------------
+WEEKLY_EVENTS = [
+    {"day": "Monday",   "name": "Mastery Monday",
+     "time_et": "9:00 AM ET", "emoji": "🌟",
+     "desc": "2× Mastery Points & Sprite Dust, boosted Legendary/Mythic spawns (24h)."},
+    {"day": "Thursday", "name": "New Sprite Thursday",
+     "time_et": "9:00 AM ET", "emoji": "🆕",
+     "desc": "A new sprite/variant joins the loot pool permanently."},
+    {"day": "Saturday", "name": "Saturday Power Hour",
+     "time_et": "3:30 PM & 9:30 PM ET", "emoji": "⚡",
+     "desc": "Featured-variant boosted spawns + stacking multipliers."},
+]
+
 # Web collection tracker (mark Have/Missing/Mastered, filter by line, export
 # shareable trade images). Surfaced via /tracker and the welcome message.
 TRACKER_URL = "https://ultroncore.github.io/sprite-tracker/"

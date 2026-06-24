@@ -14,7 +14,7 @@ from spritebot import config, db
 os.environ.setdefault("DISCORD_TOKEN", "dummy")
 
 COGS = ["vouch", "trades", "scam", "collection", "collection_sync",
-        "queue", "hub", "insights", "welcome", "admin"]
+        "queue", "hub", "events", "insights", "welcome", "admin"]
 
 EXPECTED = {
     # vouch
@@ -30,8 +30,8 @@ EXPECTED = {
     "insights", "setup", "postleaderboard", "digest", "announcenew",
     # queue group (top-level name)
     "queue",
-    # hub
-    "panel",
+    # hub / events
+    "panel", "events",
 }
 
 # Subcommands under the /queue group (asserted separately).

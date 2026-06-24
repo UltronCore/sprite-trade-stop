@@ -34,6 +34,7 @@ COGS = [
     "spritebot.cogs.collection_sync",
     "spritebot.cogs.queue",
     "spritebot.cogs.hub",
+    "spritebot.cogs.events",
     "spritebot.cogs.insights",
     "spritebot.cogs.welcome",
     "spritebot.cogs.admin",
@@ -94,7 +95,11 @@ class SpriteTradeBot(commands.Bot):
                 await interaction.response.send_message(msg, ephemeral=True)
         except discord.HTTPException:
             pass
+        disabled = set(config.DISABLED_COGS or [])
         for ext in COGS:
+            if ext.rsplit(".", 1)[-1] in disabled:
+                print(f"Skipping disabled cog: {ext}")
+                continue
             await self.load_extension(ext)
         # Sync slash commands. If GUILD_ID is set, sync to that guild for
         # instant availability; otherwise sync globally (can take ~1 hour).

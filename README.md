@@ -118,9 +118,15 @@ That's it. For 24/7 hosting (free **Oracle Cloud** or a ~$5/mo VPS), see **[HOST
 | `/digest on\|off\|now` | admin | Weekly low-noise guild sprite digest |
 | `/announcenew` | admin | Announce sprites added since the last baseline |
 | `/panel` | admin | Post the one-click **control panel** (pin it) |
+| `/events` | anyone | Weekly Sprite events (Mastery Monday / New Sprite Thursday / Power Hour) |
 
 Public and image-rendering commands have per-user **cooldowns** to prevent spam.
 The bot is **single-guild** (`GUILD_ID`) and refuses commands from other servers.
+
+> **Running another vouch bot already?** Set `config.DISABLED_COGS = ["vouch", "scam"]`
+> to run only the collection / queue / panel / events side and avoid overlap.
+> Before deploying, work through **[SERVER-CHECK.md](SERVER-CHECK.md)** — a
+> concrete inspection checklist (channel/role names, bot role position, overlap).
 | `/reportscammer @user proof` | anyone | Report to modlog |
 | `/editvouch` · `/removevouch` | admin | Manage vouches |
 | `/blacklist` · `/unblacklist` | admin | Block from the system |

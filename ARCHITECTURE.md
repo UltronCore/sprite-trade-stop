@@ -84,6 +84,7 @@ spritebot/
                              done/skip/board) + persistent Join/Leave buttons
     hub.py                   /panel control panel: persistent button hub + sync
                              modal + join-queue dropdown (click instead of type)
+    events.py                /events weekly Sprite events (Mon/Thu/Sat cadence)
     insights.py              /insights (AI-free message counts)
     welcome.py               on_member_join: Newbie flair + welcome embed
     admin.py                 /setup, /digest, /announcenew, /postleaderboard,
@@ -202,6 +203,14 @@ and the new-sprite announcement.
 - Tests/CI: `ruff check .` + `pytest` run on Python 3.10/3.11/3.12 via
   `.github/workflows/ci.yml`. `test_commands.py` asserts the full command set
   registers — keep it updated when adding/removing commands.
+
+## 11b. Feature toggles & roster growth
+- **`config.DISABLED_COGS`** — cog short-names to skip at load (filtered in
+  `bot.py setup_hook`). Use `["vouch","scam"]` when another bot owns vouching.
+- **Adding sprites:** append to the web `data.js` at the END (preserves share
+  codes), regenerate `assets/sprites.json`, drop images in `assets/sprites/`.
+  `sprites.decode` is roster-growth-safe: shorter (older) codes still decode,
+  new sprites default to missing. Released total is gated by `unreleased:false`.
 
 ## 12. Known limits (see ISSUES.md)
 Single-guild only (by design); collection sync is pull-based; reciprocal-ring

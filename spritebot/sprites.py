@@ -50,17 +50,27 @@ def extract_code(text: str) -> str:
     return text
 
 
-# A valid code packs exactly len(SHARE_ORDER) statuses at 4 per byte.
+# A full code packs len(SHARE_ORDER) statuses at 4 per byte. Codes can be SHORTER
+# than the full roster (older code, or a code made before new upcoming sprites
+# were appended) — those decode fine with the trailing (new) sprites defaulting
+# to missing. But a valid code must at least cover every RELEASED sprite, so a
+# too-short string can't masquerade as a real collection.
 _EXPECTED_BYTES = (len(SHARE_ORDER) + 3) // 4
+_MAX_RELEASED_IDX = max(
+    (i for i, sid in enumerate(SHARE_ORDER) if not BY_ID[sid].get("unreleased")),
+    default=0)
+_MIN_BYTES = _MAX_RELEASED_IDX // 4 + 1
 _CODE_RE = re.compile(r"^[A-Za-z0-9_-]+$")
 
 
 def decode(code: str) -> dict[str, int]:
-    """Decode a share code into {sprite_id: status}, with STRICT validation.
+    """Decode a share code into {sprite_id: status}, with validation.
 
-    Rejects anything that isn't a real tracker code: wrong charset, wrong
-    decoded length, or impossible status values (only 0/1/2 are valid). This
-    keeps garbage like 'abc' or '!!!!' from being stored as a collection.
+    Rejects garbage (wrong charset, impossible status values, or too short to
+    even cover the released roster) and codes longer than the full roster.
+    Shorter-but-valid codes (predating newly-appended upcoming sprites) are
+    accepted, with the trailing new sprites defaulting to missing — so adding
+    sprites never invalidates existing share codes.
     """
     code = extract_code(code)
     if not code or not _CODE_RE.match(code):
@@ -71,14 +81,15 @@ def decode(code: str) -> dict[str, int]:
         raw = base64.b64decode(b64, validate=True)
     except Exception as e:  # noqa: BLE001
         raise ValueError("not a valid sync code") from e
-    if len(raw) != _EXPECTED_BYTES:
+    if not (_MIN_BYTES <= len(raw) <= _EXPECTED_BYTES):
         raise ValueError(
-            f"sync code has the wrong length (got {len(raw)} bytes, "
-            f"expected {_EXPECTED_BYTES})")
+            f"sync code has the wrong length (got {len(raw)} bytes, expected "
+            f"{_MIN_BYTES}–{_EXPECTED_BYTES})")
 
     status: dict[str, int] = {}
     for i, sid in enumerate(SHARE_ORDER):
-        v = (raw[i >> 2] >> ((i % 4) * 2)) & 0b11
+        byte = raw[i >> 2] if (i >> 2) < len(raw) else 0
+        v = (byte >> ((i % 4) * 2)) & 0b11
         if v == 3:  # 3 is never produced by the tracker (statuses are 0/1/2)
             raise ValueError("sync code contains an invalid status value")
         status[sid] = v

@@ -53,7 +53,17 @@
     "zeropoint_galaxy",
     "zeropoint_gem",
     "zeropoint_holofoil",
-    "theburntpeanut_basic"
+    "theburntpeanut_basic",
+    "striker_basic",
+    "fishy_basic",
+    "aura_basic",
+    "boss_basic",
+    "reaper_basic",
+    "reaper_galaxy",
+    "wick_basic",
+    "drifter_basic",
+    "ice_basic",
+    "seven_basic"
   ],
   "themes": [
     {
@@ -524,6 +534,86 @@
       "theme": "basic",
       "rarity": "Mythic",
       "unreleased": false
+    },
+    {
+      "id": "striker_basic",
+      "name": "Striker",
+      "character": "Striker",
+      "theme": "basic",
+      "rarity": "Rare",
+      "unreleased": true
+    },
+    {
+      "id": "fishy_basic",
+      "name": "Fishy",
+      "character": "Fishy",
+      "theme": "basic",
+      "rarity": "Rare",
+      "unreleased": true
+    },
+    {
+      "id": "aura_basic",
+      "name": "Aura",
+      "character": "Aura",
+      "theme": "basic",
+      "rarity": "Rare",
+      "unreleased": true
+    },
+    {
+      "id": "boss_basic",
+      "name": "Boss",
+      "character": "Boss",
+      "theme": "basic",
+      "rarity": "Rare",
+      "unreleased": true
+    },
+    {
+      "id": "reaper_basic",
+      "name": "Grim Reaper",
+      "character": "Grim Reaper",
+      "theme": "basic",
+      "rarity": "Rare",
+      "unreleased": true
+    },
+    {
+      "id": "reaper_galaxy",
+      "name": "Galaxy Grim Reaper",
+      "character": "Grim Reaper",
+      "theme": "galaxy",
+      "rarity": "Special",
+      "unreleased": true
+    },
+    {
+      "id": "wick_basic",
+      "name": "John Wick",
+      "character": "John Wick",
+      "theme": "basic",
+      "rarity": "Rare",
+      "unreleased": true
+    },
+    {
+      "id": "drifter_basic",
+      "name": "Drifter",
+      "character": "Drifter",
+      "theme": "basic",
+      "rarity": "Rare",
+      "unreleased": true
+    },
+    {
+      "id": "ice_basic",
+      "name": "Ice",
+      "character": "Ice",
+      "theme": "basic",
+      "rarity": "Rare",
+      "unreleased": true
+    },
+    {
+      "id": "seven_basic",
+      "name": "Seven",
+      "character": "Seven",
+      "theme": "basic",
+      "rarity": "Rare",
+      "unreleased": true
     }
   ]
 }
