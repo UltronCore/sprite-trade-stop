@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sprite Stop Locker — Fortnite Sprites</title>
+  <meta name="description" content="Fan-made Fortnite Sprites locker for the Sprite Trade Stop Discord. Tap sprites you've collected, save a locker image, and copy a ready-to-paste Discord post.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" href="sprites/water_basic.png">
+</head>
+<body>
+
+<header class="site-head">
+  <div class="head-row">
+    <h1>SPRITE <span>STOP</span> LOCKER</h1>
+    <div class="owner">
+      <label for="ownerName">Locker name</label>
+      <input id="ownerName" type="text" maxlength="24" placeholder="Your name" autocomplete="off">
+    </div>
+  </div>
+  <p class="tagline">Tap a sprite you've extracted — tap again for Mastered 👑. Saved in your browser, shareable everywhere.</p>
+
+  <div class="progress-wrap">
+    <div class="progress">
+      <div class="p-label">📦 COLLECTED <span id="collectedCount">0 / 0</span></div>
+      <div class="bar"><div class="fill collected" id="collectedBar"></div></div>
+    </div>
+    <div class="progress">
+      <div class="p-label">👑 MASTERED <span id="masteredCount">0 / 0</span></div>
+      <div class="bar"><div class="fill mastered" id="masteredBar"></div></div>
+    </div>
+  </div>
+</header>
+
+<nav class="toolbar">
+  <div class="chips" id="lineChips"></div>
+
+  <div class="tool-groups">
+    <div class="tool-group">
+      <span class="tg-label">🖼️ Save image</span>
+      <button id="saveLockerBtn" class="btn accent">My Locker</button>
+      <button id="saveLookingBtn" class="btn danger">Looking For</button>
+    </div>
+    <div class="tool-group">
+      <span class="tg-label">💬 Copy for Discord</span>
+      <button id="copyLockerBtn" class="btn">Locker post</button>
+      <button id="copyLookingBtn" class="btn">Looking For</button>
+      <button id="copyTradeBtn" class="btn">Trade post</button>
+    </div>
+    <div class="tool-group">
+      <span class="tg-label">🔗 Sync</span>
+      <button id="shareBtn" class="btn ghost">Copy share link</button>
+      <button id="syncBtn" class="btn ghost">Copy sync code</button>
+      <button id="importBtn" class="btn ghost">Import</button>
+    </div>
+    <div class="tool-group">
+      <label class="toggle"><input type="checkbox" id="showUnreleased"> Show unreleased</label>
+      <button id="resetBtn" class="btn ghost small">Reset</button>
+    </div>
+  </div>
+</nav>
+
+<main id="locker" aria-live="polite"></main>
+
+<footer class="site-foot">
+  <p>Unofficial fan-made locker for the <strong>Sprite Trade Stop</strong> Discord.
+     Sprite artwork © Epic Games, Inc. — not affiliated with or endorsed by Epic Games.</p>
+  <p>Sister tools: <a href="https://ultroncore.github.io/sprite-tracker/" rel="noopener">Sprites Tracker</a> ·
+     sync codes work with the Sprite Trade Stop bot's <code>/synccollection</code>.</p>
+</footer>
+
+<dialog id="importDialog">
+  <form method="dialog">
+    <h2>Import a collection</h2>
+    <p>Paste a share link or sync code (from this site, the Sprites Tracker, or the Discord bot).</p>
+    <textarea id="importText" rows="3" placeholder="https://…?c=AAAA…  or  AAAA…"></textarea>
+    <div class="dlg-actions">
+      <button value="cancel" class="btn ghost">Cancel</button>
+      <button value="ok" id="importOkBtn" class="btn accent">Import</button>
+    </div>
+  </form>
+</dialog>
+
+<div id="toast" role="status"></div>
+
+<script src="data.js"></script>
+<script src="locker.js"></script>
+<script src="export.js"></script>
+</body>
+</html>
